@@ -1,0 +1,113 @@
+name: Build Extasis Donker (Windows & macOS)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows (x64)
+            os: windows-latest
+            artifact_name: ExtasisDonker-Windows
+            cmake_args: -DCMAKE_BUILD_TYPE=Release -DJUCE_COPY_PLUGIN_AFTER_BUILD=FALSE
+          - name: macOS (Universal)
+            os: macos-latest
+            artifact_name: ExtasisDonker-macOS
+            cmake_args: -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DJUCE_COPY_PLUGIN_AFTER_BUILD=FALSE
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC Developer Command Prompt (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup Ninja
+        uses: ashley-taylor/setup-ninja@v1.0.0
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Ninja" ${{ matrix.cmake_args }}
+
+      - name: Build Plugin & Standalone
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Prepare Windows Artifacts
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          for path in "build/ExtasisDonker_artefacts/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/VST3/Extasis Donker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/Extasis Donker.vst3"; do
+            if [ -d "$path" ]; then
+              cp -r "$path" artifacts/
+              break
+            fi
+          done
+          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.exe" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.exe" "build/ExtasisDonker_artefacts/Standalone/Extasis Donker.exe" "build/ExtasisDonker_artefacts/Release/Standalone/Extasis Donker.exe"; do
+            if [ -f "$path" ]; then
+              cp "$path" artifacts/
+              break
+            fi
+          done
+          if [ -f "installer/INSTALL_WINDOWS.bat" ]; then
+            cp installer/INSTALL_WINDOWS.bat artifacts/
+          fi
+          if [ -f "MANUAL.md" ]; then
+            cp MANUAL.md artifacts/
+          fi
+          if [ -f "README.md" ]; then
+            cp README.md artifacts/
+          fi
+
+      - name: Prepare macOS Artifacts
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          for path in "build/ExtasisDonker_artefacts/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/VST3/Extasis Donker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/Extasis Donker.vst3"; do
+            if [ -d "$path" ]; then
+              cp -r "$path" artifacts/
+              break
+            fi
+          done
+          for path in "build/ExtasisDonker_artefacts/AU/ExtasisDonker.component" "build/ExtasisDonker_artefacts/Release/AU/ExtasisDonker.component" "build/ExtasisDonker_artefacts/AU/Extasis Donker.component" "build/ExtasisDonker_artefacts/Release/AU/Extasis Donker.component"; do
+            if [ -d "$path" ]; then
+              cp -r "$path" artifacts/
+              break
+            fi
+          done
+          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.app" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.app" "build/ExtasisDonker_artefacts/Standalone/Extasis Donker.app" "build/ExtasisDonker_artefacts/Release/Standalone/Extasis Donker.app"; do
+            if [ -d "$path" ]; then
+              cp -r "$path" artifacts/
+              break
+            fi
+          done
+          if [ -f "installer/INSTALL_MAC.command" ]; then
+            cp installer/INSTALL_MAC.command artifacts/
+            chmod +x artifacts/INSTALL_MAC.command
+          fi
+          if [ -f "MANUAL.md" ]; then
+            cp MANUAL.md artifacts/
+          fi
+          if [ -f "README.md" ]; then
+            cp README.md artifacts/
+          fi
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: artifacts/
