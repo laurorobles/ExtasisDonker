@@ -432,15 +432,16 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     placeKnob("fm_tune", 126, 254, 62, 86);
     placeKnob("fm_env", 196, 254, 62, 86);
     placeKnob("wave_position", 266, 254, 62, 86);
-    placeKnob("time_scale", 336, 254, 62, 86);
+    placeKnob("pump_amount", 336, 254, 62, 86);
 
     placeKnob("mod_amount", 96, 356, 62, 86);
     placeKnob("tx_crunch", 176, 356, 62, 86);
-    placeKnob("transient_click", 256, 356, 62, 86);
+    placeKnob("pitch_drop", 256, 356, 62, 86);
 
-    // Section 2: Transient & Tone (Condensed flush)
-    placeKnob("filter_cutoff", 430, 290, 72, 92);
-    placeKnob("glide_time", 522, 290, 72, 92);
+    // Section 2: Filter & Tone (Condensed flush, now 3 knobs)
+    placeKnob("filter_cutoff", 420, 290, 62, 92);
+    placeKnob("filter_reso", 486, 290, 62, 92);
+    placeKnob("glide_time", 552, 290, 62, 92);
 
     // Section 3: Pre-Master FX (Reorganized: knobs on top, Soft Clip button directly beneath)
     placeKnob("erosion_grit", 632, 254, 64, 86);

@@ -25,7 +25,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout ExtasisDonkerAudioProcessor:
     // Macro 2: FM RATIO / TUNE (CC 14)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("fm_tune", 1), "FM Ratio",
-        juce::NormalisableRange<float>(0.5f, 8.0f, 0.01f), 2.0f, "x"));
+        juce::NormalisableRange<float>(0.5f, 8.0f, 0.5f), 2.0f, "x"));
 
     // Macro 3: TX WAVE (CC 71)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
@@ -35,12 +35,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout ExtasisDonkerAudioProcessor:
     // Macro 4: FM DECAY (CC 73)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("fm_env", 1), "Donk Decay",
-        juce::NormalisableRange<float>(20.0f, 350.0f, 1.0f, 0.5f), 95.0f, "ms"));
+        juce::NormalisableRange<float>(5.0f, 500.0f, 1.0f, 0.5f), 95.0f, "ms"));
 
     // Macro 5: TIME SCALE (CC 12)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID("time_scale", 1), "Time Scale",
-        juce::NormalisableRange<float>(-100.0f, 100.0f, 1.0f), 0.0f, "%"));
+        juce::ParameterID("pump_amount", 1), "Auto Pump",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 0.0f, "%"));
 
     // Macro 6: MOD SENS / VELOCITY (CC 11)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
@@ -49,7 +49,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout ExtasisDonkerAudioProcessor:
 
     // Macro 7: TRANSIENT CLICK (CC 15)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID("transient_click", 1), "Transient Click",
+        juce::ParameterID("pitch_drop", 1), "Pitch Drop",
         juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 55.0f, "%"));
 
     // Macro 8: TX CRUNCH / FEEDBACK (CC 16)
@@ -84,7 +84,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout ExtasisDonkerAudioProcessor:
     // Macro 11: FILTER CUTOFF (CC 74)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("filter_cutoff", 1), "Filter Cutoff",
-        juce::NormalisableRange<float>(200.0f, 20000.0f, 1.0f, 0.35f), 16000.0f, "Hz"));
+        juce::NormalisableRange<float>(50.0f, 20000.0f, 1.0f, 0.35f), 16000.0f, "Hz"));
+
+    // Macro: FILTER RESONANCE (CC 75)
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("filter_reso", 1), "Resonance",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f), 0.0f, "%"));
 
     // Macro 12: REVERB / TOP SPREAD (CC 21)
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
@@ -277,9 +282,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 1. Lately 1987 (TX81Z)
         case 0:
             setP("fm_amount", 80.0f); setP("fm_tune", 2.0f); setP("wave_position", 50.0f);
-            setP("fm_env", 95.0f); setP("time_scale", 0.0f); setP("mod_amount", 110.0f);
-            setP("transient_click", 55.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -9.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 16000.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 95.0f); setP("pump_amount", 0.0f); setP("mod_amount", 110.0f);
+            setP("pitch_drop", 55.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -9.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 16000.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 15.0f); setP("punch_slam", 30.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -287,9 +292,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 2. Basic FM House (Robin S)
         case 1:
             setP("fm_amount", 88.0f); setP("fm_tune", 2.0f); setP("wave_position", 10.0f);
-            setP("fm_env", 120.0f); setP("time_scale", 0.0f); setP("mod_amount", 100.0f);
-            setP("transient_click", 65.0f); setP("tx_crunch", 15.0f); setP("sub_gain", -6.0f);
-            setP("sub_tone", 20.0f); setP("filter_cutoff", 18000.0f); setP("reverb_space", 25.0f);
+            setP("fm_env", 120.0f); setP("pump_amount", 0.0f); setP("mod_amount", 100.0f);
+            setP("pitch_drop", 65.0f); setP("tx_crunch", 15.0f); setP("sub_gain", -6.0f);
+            setP("sub_tone", 20.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 18000.0f); setP("reverb_space", 25.0f);
             setP("erosion_grit", 20.0f); setP("punch_slam", 40.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 15.0f);
             break;
@@ -297,9 +302,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 3. Solid Bass Legacy
         case 2:
             setP("fm_amount", 82.0f); setP("fm_tune", 2.0f); setP("wave_position", 45.0f);
-            setP("fm_env", 105.0f); setP("time_scale", 0.0f); setP("mod_amount", 100.0f);
-            setP("transient_click", 50.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -7.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 15000.0f); setP("reverb_space", 10.0f);
+            setP("fm_env", 105.0f); setP("pump_amount", 0.0f); setP("mod_amount", 100.0f);
+            setP("pitch_drop", 50.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -7.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 15000.0f); setP("reverb_space", 10.0f);
             setP("erosion_grit", 10.0f); setP("punch_slam", 35.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -307,9 +312,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 4. StoneBridge Organ Pluck
         case 3:
             setP("fm_amount", 92.0f); setP("fm_tune", 2.0f); setP("wave_position", 20.0f);
-            setP("fm_env", 85.0f); setP("time_scale", 0.0f); setP("mod_amount", 120.0f);
-            setP("transient_click", 60.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -8.0f);
-            setP("sub_tone", 20.0f); setP("filter_cutoff", 19000.0f); setP("reverb_space", 35.0f);
+            setP("fm_env", 85.0f); setP("pump_amount", 0.0f); setP("mod_amount", 120.0f);
+            setP("pitch_drop", 60.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -8.0f);
+            setP("sub_tone", 20.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 19000.0f); setP("reverb_space", 35.0f);
             setP("erosion_grit", 25.0f); setP("punch_slam", 45.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 10.0f);
             break;
@@ -317,9 +322,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 5. Speed Garage 1998
         case 4:
             setP("fm_amount", 90.0f); setP("fm_tune", 4.0f); setP("wave_position", 40.0f);
-            setP("fm_env", 110.0f); setP("time_scale", 0.0f); setP("mod_amount", 110.0f);
-            setP("transient_click", 50.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -7.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 17000.0f); setP("reverb_space", 35.0f);
+            setP("fm_env", 110.0f); setP("pump_amount", 0.0f); setP("mod_amount", 110.0f);
+            setP("pitch_drop", 50.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -7.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 17000.0f); setP("reverb_space", 35.0f);
             setP("erosion_grit", 25.0f); setP("punch_slam", 35.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 25.0f);
             break;
@@ -327,9 +332,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 6. Todd Edwards Cut
         case 5:
             setP("fm_amount", 78.0f); setP("fm_tune", 1.0f); setP("wave_position", 30.0f);
-            setP("fm_env", 70.0f); setP("time_scale", -10.0f); setP("mod_amount", 90.0f);
-            setP("transient_click", 45.0f); setP("tx_crunch", 15.0f); setP("sub_gain", -5.0f);
-            setP("sub_tone", 10.0f); setP("filter_cutoff", 14000.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 70.0f); setP("pump_amount", -10.0f); setP("mod_amount", 90.0f);
+            setP("pitch_drop", 45.0f); setP("tx_crunch", 15.0f); setP("sub_gain", -5.0f);
+            setP("sub_tone", 10.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 14000.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 15.0f); setP("punch_slam", 30.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 5.0f);
             break;
@@ -337,9 +342,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 7. Guaracha Medallo Punch
         case 6:
             setP("fm_amount", 96.0f); setP("fm_tune", 2.0f); setP("wave_position", 65.0f);
-            setP("fm_env", 65.0f); setP("time_scale", -15.0f); setP("mod_amount", 130.0f);
-            setP("transient_click", 85.0f); setP("tx_crunch", 35.0f); setP("sub_gain", -8.0f);
-            setP("sub_tone", 25.0f); setP("filter_cutoff", 18500.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 65.0f); setP("pump_amount", -15.0f); setP("mod_amount", 130.0f);
+            setP("pitch_drop", 85.0f); setP("tx_crunch", 35.0f); setP("sub_gain", -8.0f);
+            setP("sub_tone", 25.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 18500.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 30.0f); setP("punch_slam", 60.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -347,9 +352,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 8. Aleteo Zapateo Knock
         case 7:
             setP("fm_amount", 100.0f); setP("fm_tune", 3.0f); setP("wave_position", 55.0f);
-            setP("fm_env", 50.0f); setP("time_scale", -25.0f); setP("mod_amount", 140.0f);
-            setP("transient_click", 95.0f); setP("tx_crunch", 40.0f); setP("sub_gain", -10.0f);
-            setP("sub_tone", 30.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 50.0f); setP("pump_amount", -25.0f); setP("mod_amount", 140.0f);
+            setP("pitch_drop", 95.0f); setP("tx_crunch", 40.0f); setP("sub_gain", -10.0f);
+            setP("sub_tone", 30.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 40.0f); setP("punch_slam", 75.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -357,9 +362,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 9. Tribal House Donker
         case 8:
             setP("fm_amount", 90.0f); setP("fm_tune", 2.0f); setP("wave_position", 50.0f);
-            setP("fm_env", 80.0f); setP("time_scale", -10.0f); setP("mod_amount", 115.0f);
-            setP("transient_click", 75.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -6.0f);
-            setP("sub_tone", 20.0f); setP("filter_cutoff", 17000.0f); setP("reverb_space", 25.0f);
+            setP("fm_env", 80.0f); setP("pump_amount", -10.0f); setP("mod_amount", 115.0f);
+            setP("pitch_drop", 75.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -6.0f);
+            setP("sub_tone", 20.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 17000.0f); setP("reverb_space", 25.0f);
             setP("erosion_grit", 25.0f); setP("punch_slam", 50.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 10.0f);
             break;
@@ -367,9 +372,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 10. Zapateo Laser Attack
         case 9:
             setP("fm_amount", 98.0f); setP("fm_tune", 4.0f); setP("wave_position", 70.0f);
-            setP("fm_env", 45.0f); setP("time_scale", -30.0f); setP("mod_amount", 150.0f);
-            setP("transient_click", 100.0f); setP("tx_crunch", 45.0f); setP("sub_gain", -11.0f);
-            setP("sub_tone", 35.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 45.0f); setP("pump_amount", -30.0f); setP("mod_amount", 150.0f);
+            setP("pitch_drop", 100.0f); setP("tx_crunch", 45.0f); setP("sub_gain", -11.0f);
+            setP("sub_tone", 35.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 50.0f); setP("punch_slam", 80.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -377,9 +382,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 11. Cartagena Sunset Bass
         case 10:
             setP("fm_amount", 75.0f); setP("fm_tune", 2.0f); setP("wave_position", 35.0f);
-            setP("fm_env", 110.0f); setP("time_scale", 0.0f); setP("mod_amount", 95.0f);
-            setP("transient_click", 50.0f); setP("tx_crunch", 15.0f); setP("sub_gain", -4.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 15000.0f); setP("reverb_space", 30.0f);
+            setP("fm_env", 110.0f); setP("pump_amount", 0.0f); setP("mod_amount", 95.0f);
+            setP("pitch_drop", 50.0f); setP("tx_crunch", 15.0f); setP("sub_gain", -4.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 15000.0f); setP("reverb_space", 30.0f);
             setP("erosion_grit", 10.0f); setP("punch_slam", 35.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 15.0f);
             break;
@@ -387,9 +392,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 12. Morro Guaracha Bounce
         case 11:
             setP("fm_amount", 92.0f); setP("fm_tune", 2.0f); setP("wave_position", 60.0f);
-            setP("fm_env", 75.0f); setP("time_scale", -5.0f); setP("mod_amount", 125.0f);
-            setP("transient_click", 70.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -7.0f);
-            setP("sub_tone", 20.0f); setP("filter_cutoff", 18000.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 75.0f); setP("pump_amount", -5.0f); setP("mod_amount", 125.0f);
+            setP("pitch_drop", 70.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -7.0f);
+            setP("sub_tone", 20.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 18000.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 20.0f); setP("punch_slam", 55.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 20.0f);
             break;
@@ -397,9 +402,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 13. Russian Hardbass Punch
         case 12:
             setP("fm_amount", 100.0f); setP("fm_tune", 2.0f); setP("wave_position", 80.0f);
-            setP("fm_env", 75.0f); setP("time_scale", -15.0f); setP("mod_amount", 140.0f);
-            setP("transient_click", 95.0f); setP("tx_crunch", 50.0f); setP("sub_gain", -12.0f);
-            setP("sub_tone", 35.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 10.0f);
+            setP("fm_env", 75.0f); setP("pump_amount", -15.0f); setP("mod_amount", 140.0f);
+            setP("pitch_drop", 95.0f); setP("tx_crunch", 50.0f); setP("sub_gain", -12.0f);
+            setP("sub_tone", 35.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 10.0f);
             setP("erosion_grit", 45.0f); setP("punch_slam", 70.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -407,9 +412,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 14. UK Bounce Donk
         case 13:
             setP("fm_amount", 95.0f); setP("fm_tune", 3.0f); setP("wave_position", 60.0f);
-            setP("fm_env", 85.0f); setP("time_scale", 0.0f); setP("mod_amount", 120.0f);
-            setP("transient_click", 80.0f); setP("tx_crunch", 35.0f); setP("sub_gain", -8.0f);
-            setP("sub_tone", 25.0f); setP("filter_cutoff", 19000.0f); setP("reverb_space", 30.0f);
+            setP("fm_env", 85.0f); setP("pump_amount", 0.0f); setP("mod_amount", 120.0f);
+            setP("pitch_drop", 80.0f); setP("tx_crunch", 35.0f); setP("sub_gain", -8.0f);
+            setP("sub_tone", 25.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 19000.0f); setP("reverb_space", 30.0f);
             setP("erosion_grit", 30.0f); setP("punch_slam", 50.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 20.0f);
             break;
@@ -417,9 +422,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 15. Klubbheads Hard House
         case 14:
             setP("fm_amount", 94.0f); setP("fm_tune", 2.0f); setP("wave_position", 50.0f);
-            setP("fm_env", 65.0f); setP("time_scale", -10.0f); setP("mod_amount", 130.0f);
-            setP("transient_click", 75.0f); setP("tx_crunch", 35.0f); setP("sub_gain", -9.0f);
-            setP("sub_tone", 20.0f); setP("filter_cutoff", 19500.0f); setP("reverb_space", 25.0f);
+            setP("fm_env", 65.0f); setP("pump_amount", -10.0f); setP("mod_amount", 130.0f);
+            setP("pitch_drop", 75.0f); setP("tx_crunch", 35.0f); setP("sub_gain", -9.0f);
+            setP("sub_tone", 20.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 19500.0f); setP("reverb_space", 25.0f);
             setP("erosion_grit", 35.0f); setP("punch_slam", 60.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -427,9 +432,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 16. Scouse House Spring
         case 15:
             setP("fm_amount", 88.0f); setP("fm_tune", 2.5f); setP("wave_position", 40.0f);
-            setP("fm_env", 90.0f); setP("time_scale", 0.0f); setP("mod_amount", 110.0f);
-            setP("transient_click", 70.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -8.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 17500.0f); setP("reverb_space", 35.0f);
+            setP("fm_env", 90.0f); setP("pump_amount", 0.0f); setP("mod_amount", 110.0f);
+            setP("pitch_drop", 70.0f); setP("tx_crunch", 25.0f); setP("sub_gain", -8.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 17500.0f); setP("reverb_space", 35.0f);
             setP("erosion_grit", 20.0f); setP("punch_slam", 45.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 25.0f);
             break;
@@ -437,9 +442,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 17. Donk-O-Mania Banger
         case 16:
             setP("fm_amount", 100.0f); setP("fm_tune", 3.0f); setP("wave_position", 75.0f);
-            setP("fm_env", 70.0f); setP("time_scale", -15.0f); setP("mod_amount", 150.0f);
-            setP("transient_click", 90.0f); setP("tx_crunch", 55.0f); setP("sub_gain", -10.0f);
-            setP("sub_tone", 30.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 25.0f);
+            setP("fm_env", 70.0f); setP("pump_amount", -15.0f); setP("mod_amount", 150.0f);
+            setP("pitch_drop", 90.0f); setP("tx_crunch", 55.0f); setP("sub_gain", -10.0f);
+            setP("sub_tone", 30.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 25.0f);
             setP("erosion_grit", 50.0f); setP("punch_slam", 75.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 15.0f);
             break;
@@ -447,9 +452,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 18. Gopnik Street Bass
         case 17:
             setP("fm_amount", 98.0f); setP("fm_tune", 4.0f); setP("wave_position", 85.0f);
-            setP("fm_env", 60.0f); setP("time_scale", -20.0f); setP("mod_amount", 145.0f);
-            setP("transient_click", 85.0f); setP("tx_crunch", 60.0f); setP("sub_gain", -11.0f);
-            setP("sub_tone", 35.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 60.0f); setP("pump_amount", -20.0f); setP("mod_amount", 145.0f);
+            setP("pitch_drop", 85.0f); setP("tx_crunch", 60.0f); setP("sub_gain", -11.0f);
+            setP("sub_tone", 35.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 55.0f); setP("punch_slam", 70.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -457,9 +462,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 19. Tech House Subby
         case 18:
             setP("fm_amount", 65.0f); setP("fm_tune", 1.0f); setP("wave_position", 25.0f);
-            setP("fm_env", 130.0f); setP("time_scale", 5.0f); setP("mod_amount", 80.0f);
-            setP("transient_click", 40.0f); setP("tx_crunch", 10.0f); setP("sub_gain", -3.0f);
-            setP("sub_tone", 10.0f); setP("filter_cutoff", 12000.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 130.0f); setP("pump_amount", 5.0f); setP("mod_amount", 80.0f);
+            setP("pitch_drop", 40.0f); setP("tx_crunch", 10.0f); setP("sub_gain", -3.0f);
+            setP("sub_tone", 10.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 12000.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 10.0f); setP("punch_slam", 25.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 10.0f);
             break;
@@ -467,9 +472,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 20. Bass House Growler
         case 19:
             setP("fm_amount", 95.0f); setP("fm_tune", 1.5f); setP("wave_position", 80.0f);
-            setP("fm_env", 140.0f); setP("time_scale", 0.0f); setP("mod_amount", 125.0f);
-            setP("transient_click", 65.0f); setP("tx_crunch", 45.0f); setP("sub_gain", -6.0f);
-            setP("sub_tone", 30.0f); setP("filter_cutoff", 16000.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 140.0f); setP("pump_amount", 0.0f); setP("mod_amount", 125.0f);
+            setP("pitch_drop", 65.0f); setP("tx_crunch", 45.0f); setP("sub_gain", -6.0f);
+            setP("sub_tone", 30.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 16000.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 40.0f); setP("punch_slam", 65.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 30.0f);
             break;
@@ -477,9 +482,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 21. Brazilian Slap FM
         case 20:
             setP("fm_amount", 85.0f); setP("fm_tune", 2.0f); setP("wave_position", 40.0f);
-            setP("fm_env", 80.0f); setP("time_scale", -10.0f); setP("mod_amount", 110.0f);
-            setP("transient_click", 75.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -5.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 16500.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 80.0f); setP("pump_amount", -10.0f); setP("mod_amount", 110.0f);
+            setP("pitch_drop", 75.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -5.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 16500.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 20.0f); setP("punch_slam", 50.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 15.0f);
             break;
@@ -487,9 +492,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 22. Minimal Deep Donk
         case 21:
             setP("fm_amount", 45.0f); setP("fm_tune", 1.0f); setP("wave_position", 15.0f);
-            setP("fm_env", 150.0f); setP("time_scale", 10.0f); setP("mod_amount", 60.0f);
-            setP("transient_click", 25.0f); setP("tx_crunch", 5.0f); setP("sub_gain", -2.0f);
-            setP("sub_tone", 5.0f); setP("filter_cutoff", 9000.0f); setP("reverb_space", 10.0f);
+            setP("fm_env", 150.0f); setP("pump_amount", 10.0f); setP("mod_amount", 60.0f);
+            setP("pitch_drop", 25.0f); setP("tx_crunch", 5.0f); setP("sub_gain", -2.0f);
+            setP("sub_tone", 5.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 9000.0f); setP("reverb_space", 10.0f);
             setP("erosion_grit", 0.0f); setP("punch_slam", 20.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 20.0f);
             break;
@@ -497,9 +502,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 23. Acid Donk Pluck
         case 22:
             setP("fm_amount", 88.0f); setP("fm_tune", 3.0f); setP("wave_position", 70.0f);
-            setP("fm_env", 90.0f); setP("time_scale", 0.0f); setP("mod_amount", 130.0f);
-            setP("transient_click", 70.0f); setP("tx_crunch", 40.0f); setP("sub_gain", -8.0f);
-            setP("sub_tone", 25.0f); setP("filter_cutoff", 13000.0f); setP("reverb_space", 25.0f);
+            setP("fm_env", 90.0f); setP("pump_amount", 0.0f); setP("mod_amount", 130.0f);
+            setP("pitch_drop", 70.0f); setP("tx_crunch", 40.0f); setP("sub_gain", -8.0f);
+            setP("sub_tone", 25.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 13000.0f); setP("reverb_space", 25.0f);
             setP("erosion_grit", 30.0f); setP("punch_slam", 55.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 25.0f);
             break;
@@ -507,9 +512,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 24. Dirtybird Knock
         case 23:
             setP("fm_amount", 80.0f); setP("fm_tune", 2.0f); setP("wave_position", 30.0f);
-            setP("fm_env", 95.0f); setP("time_scale", 0.0f); setP("mod_amount", 105.0f);
-            setP("transient_click", 65.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -4.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 15500.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 95.0f); setP("pump_amount", 0.0f); setP("mod_amount", 105.0f);
+            setP("pitch_drop", 65.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -4.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 15500.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 15.0f); setP("punch_slam", 45.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 15.0f);
             break;
@@ -517,9 +522,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 25. Metallic Monster
         case 24:
             setP("fm_amount", 100.0f); setP("fm_tune", 5.0f); setP("wave_position", 90.0f);
-            setP("fm_env", 65.0f); setP("time_scale", -20.0f); setP("mod_amount", 150.0f);
-            setP("transient_click", 90.0f); setP("tx_crunch", 70.0f); setP("sub_gain", -10.0f);
-            setP("sub_tone", 40.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 40.0f);
+            setP("fm_env", 65.0f); setP("pump_amount", -20.0f); setP("mod_amount", 150.0f);
+            setP("pitch_drop", 90.0f); setP("tx_crunch", 70.0f); setP("sub_gain", -10.0f);
+            setP("sub_tone", 40.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 40.0f);
             setP("erosion_grit", 60.0f); setP("punch_slam", 65.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -527,9 +532,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 26. Deep Afterhours
         case 25:
             setP("fm_amount", 50.0f); setP("fm_tune", 1.0f); setP("wave_position", 0.0f);
-            setP("fm_env", 160.0f); setP("time_scale", 10.0f); setP("mod_amount", 70.0f);
-            setP("transient_click", 30.0f); setP("tx_crunch", 5.0f); setP("sub_gain", -4.0f);
-            setP("sub_tone", 5.0f); setP("filter_cutoff", 8000.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 160.0f); setP("pump_amount", 10.0f); setP("mod_amount", 70.0f);
+            setP("pitch_drop", 30.0f); setP("tx_crunch", 5.0f); setP("sub_gain", -4.0f);
+            setP("sub_tone", 5.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 8000.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 0.0f); setP("punch_slam", 15.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 35.0f);
             break;
@@ -537,9 +542,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 27. 2-Step London Garage
         case 26:
             setP("fm_amount", 85.0f); setP("fm_tune", 2.0f); setP("wave_position", 35.0f);
-            setP("fm_env", 100.0f); setP("time_scale", 0.0f); setP("mod_amount", 105.0f);
-            setP("transient_click", 55.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -6.0f);
-            setP("sub_tone", 15.0f); setP("filter_cutoff", 16000.0f); setP("reverb_space", 30.0f);
+            setP("fm_env", 100.0f); setP("pump_amount", 0.0f); setP("mod_amount", 105.0f);
+            setP("pitch_drop", 55.0f); setP("tx_crunch", 20.0f); setP("sub_gain", -6.0f);
+            setP("sub_tone", 15.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 16000.0f); setP("reverb_space", 30.0f);
             setP("erosion_grit", 20.0f); setP("punch_slam", 40.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 20.0f);
             break;
@@ -547,9 +552,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 28. 12-Bit Vintage Sampler
         case 27:
             setP("fm_amount", 80.0f); setP("fm_tune", 2.0f); setP("wave_position", 50.0f);
-            setP("fm_env", 90.0f); setP("time_scale", 0.0f); setP("mod_amount", 100.0f);
-            setP("transient_click", 60.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -8.0f);
-            setP("sub_tone", 20.0f); setP("filter_cutoff", 14000.0f); setP("reverb_space", 15.0f);
+            setP("fm_env", 90.0f); setP("pump_amount", 0.0f); setP("mod_amount", 100.0f);
+            setP("pitch_drop", 60.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -8.0f);
+            setP("sub_tone", 20.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 14000.0f); setP("reverb_space", 15.0f);
             setP("erosion_grit", 70.0f); setP("punch_slam", 50.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -557,9 +562,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 29. Sub Atomic Laser
         case 28:
             setP("fm_amount", 95.0f); setP("fm_tune", 3.0f); setP("wave_position", 60.0f);
-            setP("fm_env", 40.0f); setP("time_scale", -35.0f); setP("mod_amount", 160.0f);
-            setP("transient_click", 100.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -5.0f);
-            setP("sub_tone", 25.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 20.0f);
+            setP("fm_env", 40.0f); setP("pump_amount", -35.0f); setP("mod_amount", 160.0f);
+            setP("pitch_drop", 100.0f); setP("tx_crunch", 30.0f); setP("sub_gain", -5.0f);
+            setP("sub_tone", 25.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 20000.0f); setP("reverb_space", 20.0f);
             setP("erosion_grit", 30.0f); setP("punch_slam", 85.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 0.0f);
             break;
@@ -567,9 +572,9 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
         // 30. Extasis Anthem Donk
         case 29:
             setP("fm_amount", 96.0f); setP("fm_tune", 2.0f); setP("wave_position", 55.0f);
-            setP("fm_env", 80.0f); setP("time_scale", -5.0f); setP("mod_amount", 135.0f);
-            setP("transient_click", 85.0f); setP("tx_crunch", 40.0f); setP("sub_gain", -7.0f);
-            setP("sub_tone", 25.0f); setP("filter_cutoff", 19500.0f); setP("reverb_space", 28.0f);
+            setP("fm_env", 80.0f); setP("pump_amount", -5.0f); setP("mod_amount", 135.0f);
+            setP("pitch_drop", 85.0f); setP("tx_crunch", 40.0f); setP("sub_gain", -7.0f);
+            setP("sub_tone", 25.0f); setP("filter_reso", 0.0f); setP("filter_cutoff", 19500.0f); setP("reverb_space", 28.0f);
             setP("erosion_grit", 35.0f); setP("punch_slam", 65.0f); setP("soft_clip", 1.0f);
             setP("glide_time", 15.0f);
             break;
@@ -591,15 +596,16 @@ void ExtasisDonkerAudioProcessor::handleMidiCC(int ccNumber, int ccValue)
         case 14: mapParam("fm_tune"); break;
         case 71: mapParam("wave_position"); break;
         case 73: mapParam("fm_env"); break;
-        case 12: mapParam("time_scale"); break;
+        case 12: mapParam("pump_amount"); break;
         case 11: mapParam("mod_amount"); break;
-        case 15: mapParam("transient_click"); break;
+        case 15: mapParam("pitch_drop"); break;
         case 16: mapParam("tx_crunch"); break;
         case 17: mapParam("erosion_grit"); break;
         case 18: mapParam("punch_slam"); break;
         case 19: mapParam("sub_gain"); break;
         case 20: mapParam("sub_tone"); break;
         case 74: mapParam("filter_cutoff"); break;
+        case 75: mapParam("filter_reso"); break;
         case 21: mapParam("reverb_space"); break;
         case 22: mapParam("glide_time"); break;
         case 23:
@@ -655,13 +661,22 @@ void ExtasisDonkerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         }
     }
 
+    double bpm = 120.0;
+    double ppqPosition = 0.0;
+    if (auto* playHead = getPlayHead()) {
+        if (auto posInfo = playHead->getPosition()) {
+            if (posInfo->getBpm().hasValue()) bpm = *posInfo->getBpm();
+            if (posInfo->getPpqPosition().hasValue()) ppqPosition = *posInfo->getPpqPosition();
+        }
+    }
+
     float fmAmount = apvts.getRawParameterValue("fm_amount")->load() * 0.01f;
     float fmTune = apvts.getRawParameterValue("fm_tune")->load();
     float wavePosition = apvts.getRawParameterValue("wave_position")->load() * 0.01f;
     float fmEnvDecay = apvts.getRawParameterValue("fm_env")->load();
-    float timeScale = apvts.getRawParameterValue("time_scale")->load() * 0.01f;
+    float pumpAmount = apvts.getRawParameterValue("pump_amount")->load() * 0.01f;
     float modAmount = apvts.getRawParameterValue("mod_amount")->load() * 0.01f;
-    float transientClick = apvts.getRawParameterValue("transient_click")->load() * 0.01f;
+    float pitchDrop = apvts.getRawParameterValue("pitch_drop")->load() * 0.01f;
     float txCrunch = apvts.getRawParameterValue("tx_crunch")->load() * 0.01f;
     float erosionGrit = apvts.getRawParameterValue("erosion_grit")->load() * 0.01f;
     float punchSlam = apvts.getRawParameterValue("punch_slam")->load() * 0.01f;
@@ -669,6 +684,7 @@ void ExtasisDonkerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     float subGain = apvts.getRawParameterValue("sub_gain")->load();
     float subTone = apvts.getRawParameterValue("sub_tone")->load() * 0.01f;
     float filterCutoff = apvts.getRawParameterValue("filter_cutoff")->load();
+    float filterReso = apvts.getRawParameterValue("filter_reso")->load() * 0.01f;
     float reverbSpace = apvts.getRawParameterValue("reverb_space")->load() * 0.01f;
     float glideMs = apvts.getRawParameterValue("glide_time")->load();
     float masterVolDb = apvts.getRawParameterValue("master_vol")->load();
@@ -678,14 +694,17 @@ void ExtasisDonkerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                   fmAmount,
                   fmTune,
                   fmEnvDecay,
-                  timeScale,
+                  pumpAmount,
+                  bpm,
+                  ppqPosition,
                   modAmount,
                   wavePosition,
                   subGain,
                   subTone,
                   txCrunch,
-                  transientClick,
+                  pitchDrop,
                   filterCutoff,
+                  filterReso,
                   reverbSpace,
                   erosionGrit,
                   punchSlam,

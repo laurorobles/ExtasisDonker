@@ -92,13 +92,13 @@ public:
             currentFreq = targetFreq;
             ampEnvelope.noteOn();
             fmEnvelope.noteOn();
-            pitchTransient.trigger(transientClickAmount * 24.0f, 12.0f); // up to 24 semitones snap
+            pitchTransient.trigger(pitchDropAmount * 24.0f, 12.0f); // up to 24 semitones snap
             oscillator.reset();
         }
         else
         {
             // Legato glide: retrigger pitch transient slightly for bite
-            pitchTransient.trigger(transientClickAmount * 12.0f, 8.0f);
+            pitchTransient.trigger(pitchDropAmount * 12.0f, 8.0f);
             if (!fmEnvelope.isActive())
                 fmEnvelope.noteOn();
         }
@@ -123,14 +123,17 @@ public:
                  float fmAmount,
                  float fmTuneRatio,
                  float fmEnvDecayMs,
-                 float timeScale,
+                 float pumpAmount,
+                 double bpm,
+                 double ppqPosition,
                  float modSens,
                  float wavePosition,
                  float subGainDb,
                  float subTone,
                  float txCrunch,
-                 float transientClick,
+                 float pitchDrop,
                  float filterCutoffHz,
+                 float filterResoAmount,
                  float reverbSpace,
                  float erosionAmount,
                  float punchSlamAmount,
@@ -138,17 +141,19 @@ public:
                  float glideMs,
                  float masterVolGain)
     {
-        transientClickAmount = transientClick;
+        pitchDropAmount = pitchDrop;
         updateGlide(glideMs);
 
-        // Update envelope parameters
-        fmEnvelope.setParameters(0.5f, fmEnvDecayMs, 0.0f, 40.0f, timeScale);
-        ampEnvelope.setParameters(1.0f, 800.0f, 0.7f, 60.0f, timeScale);
+        // Update envelope parameters (timeScale fixed to 1.0)
+        fmEnvelope.setParameters(0.5f, fmEnvDecayMs, 0.0f, 40.0f, 1.0f);
+        ampEnvelope.setParameters(1.0f, 800.0f, 0.7f, 60.0f, 1.0f);
 
-        // Filter cutoff modulated slightly by velocity
+        // Filter cutoff & resonance
         float velCutoffScale = 1.0f + (currentVelocity - 0.5f) * modSens * 0.6f;
         float actualCutoff = juce::jlimit(20.0f, 20000.0f, filterCutoffHz * velCutoffScale);
         filter.setCutoffFrequency(actualCutoff);
+        // Map 0-1 resonance to 0.707 (min) - 5.0 (max) for a squelechy ladder behavior
+        filter.setResonance(juce::jmap(filterResoAmount, 0.707f, 5.0f));
 
         // Sub gain linear
         float subGainLinear = subGainDb <= -35.0f ? 0.0f : juce::Decibels::decibelsToGain(subGainDb);
@@ -161,8 +166,15 @@ public:
         auto* rightChannel = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1) : nullptr;
         int numSamples = buffer.getNumSamples();
 
+        double samplesPerBeat = (currentSampleRate * 60.0) / (bpm > 0 ? bpm : 120.0);
+
         for (int i = 0; i < numSamples; ++i)
         {
+            // Pump Ducking (1/4 note sidechain)
+            double currentPpq = ppqPosition + ((double)i / samplesPerBeat);
+            double fraction = currentPpq - std::floor(currentPpq);
+            float duckCurve = 1.0f - (float)std::pow(1.0 - fraction, 3.0); 
+            float pumpMultiplier = (1.0f - pumpAmount) + (pumpAmount * duckCurve);
             // Pitch glide calculation
             if (glideCoeff > 0.0f && currentFreq > 0.0f)
             {
@@ -212,10 +224,10 @@ public:
             stereoProcessor.processSample(leftSample, rightSample, reverbSpace, txCrunch * 0.5f,
                                           erosionAmount, punchSlamAmount, enableSoftClip);
 
-            // Master Volume
-            leftChannel[i] = leftSample * masterVolGain;
+            // Master Volume with Pump Ducking
+            leftChannel[i] = leftSample * masterVolGain * pumpMultiplier;
             if (rightChannel != nullptr)
-                rightChannel[i] = rightSample * masterVolGain;
+                rightChannel[i] = rightSample * masterVolGain * pumpMultiplier;
         }
     }
 
@@ -234,7 +246,7 @@ private:
     float targetFreq = 0.0f;
     float glideCoeff = 0.0f;
     float currentVelocity = 1.0f;
-    float transientClickAmount = 0.5f;
+    float pitchDropAmount = 0.5f;
     int activeMidiNote = -1;
     juce::Array<int> heldNotes;
 };
