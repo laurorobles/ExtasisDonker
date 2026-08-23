@@ -3,6 +3,50 @@
 ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonkerAudioProcessor& p)
     : AudioProcessorEditor(&p), processorRef(p)
 {
+    isActivated = LicenseManager::isLicensed();
+
+    addAndMakeVisible (licenseBadgeButton);
+    licenseBadgeButton.setButtonText (isActivated ? "LICENSED" : "ACTIVATE");
+    licenseBadgeButton.setColour (juce::TextButton::buttonColourId, isActivated ? juce::Colour (0xff27ae60) : juce::Colour (0xffe74c3c));
+    licenseBadgeButton.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
+    licenseBadgeButton.onClick = [this]() {
+        if (!isActivated)
+        {
+            showActivationModal = true;
+            activationOverlay.setVisible (true);
+            activationOverlay.toFront (true);
+            repaint();
+        }
+    };
+    licenseBadgeButton.setVisible (!isActivated); // Only show when not activated, per user request.
+
+    addChildComponent (activationOverlay);
+    activationOverlay.onActivate = [this](const juce::String& key) {
+        if (LicenseManager::saveLicense (key))
+        {
+            isActivated = true;
+            activationOverlay.statusLabel.setColour (juce::Label::textColourId, juce::Colour (0xff2ecc71));
+            activationOverlay.statusLabel.setText ("License Activated Successfully! Welcome to Extasis Donker.", juce::dontSendNotification);
+            
+            juce::Timer::callAfterDelay (1500, [this]() {
+                showActivationModal = false;
+                activationOverlay.setVisible (false);
+                licenseBadgeButton.setVisible (false);
+                repaint();
+            });
+        }
+        else
+        {
+            activationOverlay.statusLabel.setColour (juce::Label::textColourId, juce::Colour (0xffe74c3c));
+            activationOverlay.statusLabel.setText ("Invalid License Key. Please try again.", juce::dontSendNotification);
+        }
+    };
+    activationOverlay.onContinueDemo = [this]() {
+        showActivationModal = false;
+        activationOverlay.setVisible (false);
+        repaint();
+    };
+
     setLookAndFeel(&customLookAndFeel);
 
     // 1. Display Setup
@@ -403,11 +447,15 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
 void ExtasisDonkerAudioProcessorEditor::resized()
 {
+    // Global App Bounds
+    auto bounds = getLocalBounds();
+    activationOverlay.setBounds (bounds);
     // Display in the center top
     display.setBounds(48, 48, 640, 170);
 
     // Top Right Bandcamp Link in Header Bar
     bandcampLinkBtn.setBounds(getWidth() - 265, 7, 215, 22);
+    licenseBadgeButton.setBounds(getWidth() - 360, 7, 85, 22);
 
     // Preset Selector, Navigation & Save Buttons
     presetBox.setBounds(700, 48, 140, 28);

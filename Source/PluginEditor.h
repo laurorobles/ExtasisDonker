@@ -4,6 +4,9 @@
 #include "GUI/TX81ZLookAndFeel.h"
 #include "GUI/TX81ZDisplay.h"
 #include "GUI/DonkTriggerButton.h"
+#include "GUI/ActivationOverlay.h"
+#include "LicenseManager.h"
+
 
 class ExtasisDonkerAudioProcessorEditor : public juce::AudioProcessorEditor,
                                          public juce::Slider::Listener,
@@ -27,6 +30,11 @@ public:
     void refreshPresetList();
 
 private:
+    bool isActivated = false;
+    bool showActivationModal = false;
+    juce::TextButton licenseBadgeButton;
+    ActivationOverlayComponent activationOverlay;
+
     ExtasisDonkerAudioProcessor& processorRef;
     ExtasisGUI::TX81ZLookAndFeel customLookAndFeel;
 

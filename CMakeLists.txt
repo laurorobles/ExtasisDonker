@@ -31,6 +31,8 @@ juce_add_plugin(ExtasisDonker
 juce_generate_juce_header(ExtasisDonker)
 
 target_sources(ExtasisDonker PRIVATE
+    Source/LicenseManager.h
+    Source/GUI/ActivationOverlay.h
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
     Source/PluginEditor.cpp
