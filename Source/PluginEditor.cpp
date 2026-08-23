@@ -41,7 +41,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     };
     addAndMakeVisible(nextPresetBtn);
 
-    // 3. Audition Trigger Button (Tactile Hardware Keycap, No Text, Pure LED)
+    // 3. Audition Trigger Button (Large Centered Logo Pad)
     triggerBtn.onNoteOn = [this](int midiNote, float velocity) {
         processorRef.triggerAuditionNote(midiNote, velocity);
     };
@@ -60,17 +60,10 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
         processorRef.getAPVTS(), "soft_clip", softClipBtn);
     addAndMakeVisible(softClipBtn);
 
-    // 5. Credits & Bandcamp Button
-    creditLabel.setText("CODED BY @LAUROROBLES", juce::dontSendNotification);
-    creditLabel.setJustificationType(juce::Justification::centredLeft);
-    creditLabel.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
-    creditLabel.setColour(juce::Label::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.9f));
-    addAndMakeVisible(creditLabel);
-
-    bandcampBtn.onClick = []() {
-        juce::URL("https://laurorobles.bandcamp.com").launchInDefaultBrowser();
-    };
-    addAndMakeVisible(bandcampBtn);
+    // 5. Bandcamp Link at far right of name bar
+    bandcampLinkBtn.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold), false, juce::Justification::centredRight);
+    bandcampLinkBtn.setColour(juce::HyperlinkButton::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.9f));
+    addAndMakeVisible(bandcampLinkBtn);
 
     // 6. Create all Knobs with Live Value Labels & MouseListeners
     createKnob("fm_amount", "DONK PUNCH");
@@ -102,7 +95,6 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
 
     display.setPatchName(presetBox.getText());
 
-    // Condensed Dimensions (980 x 480)
     setSize(980, 480);
 }
 
@@ -319,18 +311,19 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     drawScrew(rightEar.getCentreX(), 35.0f);
     drawScrew(rightEar.getCentreX(), getHeight() - 35.0f);
 
-    // 3. Top Header: Vintage Silkscreen Logo & Badges
+    // 3. Top Header: Title, Subtitle and Bandcamp
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 17.0f, juce::Font::bold));
-    g.drawText("EXTASIS DONKER", 50, 11, 190, 22, juce::Justification::left);
+    g.drawText("EXTASIS DONKER", 50, 7, 190, 20, juce::Justification::left);
 
+    // coded by @laurorobles in tiny font right below the title
     g.setColour(juce::Colour(0xff8e96a4));
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
-    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE", 215, 13, 380, 20, juce::Justification::left);
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold));
+    g.drawText("coded by @laurorobles", 52, 27, 220, 12, juce::Justification::left);
 
     // Cyan horizontal accent strip
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.fillRect(48, 38, getWidth() - 96, 2);
+    g.fillRect(48, 40, getWidth() - 96, 2);
 
     // 4. Section Framing & Panels (Condensed Height: 218px)
     auto drawSectionBox = [&g](juce::Rectangle<float> r, const juce::String& title) {
@@ -360,17 +353,16 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     // Display in the center top
     display.setBounds(48, 48, 640, 170);
 
+    // Top Right Bandcamp Link in Header Bar
+    bandcampLinkBtn.setBounds(getWidth() - 280, 10, 230, 22);
+
     // Preset Selector
     presetBox.setBounds(700, 48, 175, 28);
     prevPresetBtn.setBounds(880, 48, 28, 28);
     nextPresetBtn.setBounds(912, 48, 28, 28);
 
-    // Sleek Tactile Trigger Button (Centered circular/square cap with glowing LED)
-    triggerBtn.setBounds(700, 84, 52, 52);
-
-    // Credits & Bandcamp button next to trigger
-    creditLabel.setBounds(762, 88, 175, 18);
-    bandcampBtn.setBounds(762, 108, 175, 26);
+    // Large Centered Logo Audition Trigger Pad right below Presets
+    triggerBtn.setBounds(700, 84, 240, 134);
 
     auto placeKnob = [this](const juce::String& id, int x, int y, int w, int h) {
         if (controls.find(id) != controls.end())

@@ -36,16 +36,15 @@ private:
     juce::TextButton prevPresetBtn { "<" };
     juce::TextButton nextPresetBtn { ">" };
 
-    // Audition Trigger Button (Sleek LED Tactile Key, No Text, Drag for +/-12st)
+    // Audition Trigger Button (Large Logo Pad, Drag for +/-12st)
     ExtasisGUI::DonkTriggerButton triggerBtn;
 
     // Soft Clip Toggle Button
     juce::TextButton softClipBtn { "SOFT CLIP" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> softClipAttachment;
 
-    // Bandcamp Button & Credits
-    juce::TextButton bandcampBtn { "BANDCAMP ↗" };
-    juce::Label creditLabel;
+    // Top Right Bandcamp Link Button
+    juce::HyperlinkButton bandcampLinkBtn { "extasisrecords.bandcamp.com", juce::URL("https://extasisrecords.bandcamp.com") };
 
     // Sliders & Labels
     struct KnobControl

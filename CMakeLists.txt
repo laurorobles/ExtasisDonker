@@ -7,6 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # JUCE integration
 add_subdirectory(/Users/babyonk1/.gemini/antigravity/scratch/JUCE ${CMAKE_BINARY_DIR}/JUCE)
 
+juce_add_binary_data(ExtasisDonker_Data
+    SOURCES
+        assets/logo.png
+)
+
 juce_add_plugin(ExtasisDonker
     PLUGIN_MANUFACTURER_CODE Exta
     PLUGIN_CODE Ednk
@@ -45,6 +50,7 @@ target_compile_definitions(ExtasisDonker PUBLIC
 )
 
 target_link_libraries(ExtasisDonker PRIVATE
+    ExtasisDonker_Data
     juce::juce_audio_utils
     juce::juce_audio_processors
     juce::juce_dsp

@@ -26,6 +26,7 @@ public:
     std::function<void(const juce::String& title, const juce::String& desc)> onStatusChange;
 
 private:
+    juce::Image logoImage;
     int baseMidiNote = 36; // C1
     int semitoneOffset = 0; // -12 to +12
     bool isTriggerActive = false;
