@@ -48,14 +48,15 @@ private:
     {
         std::unique_ptr<juce::Slider> slider;
         std::unique_ptr<juce::Label> label;
-        std::unique_ptr<juce::Label> ccLabel;
+        std::unique_ptr<juce::Label> valueLabel;
         std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment;
     };
 
     std::map<juce::String, KnobControl> controls;
 
-    void createKnob(const juce::String& paramId, const juce::String& labelText, const juce::String& ccText);
+    void createKnob(const juce::String& paramId, const juce::String& labelText);
     void updateParamDisplayForSlider(juce::Slider* slider);
+    juce::String getFormattedValueText(const juce::String& paramId, double val);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ExtasisDonkerAudioProcessorEditor)
 };

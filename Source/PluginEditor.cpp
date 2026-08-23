@@ -60,26 +60,33 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
         processorRef.getAPVTS(), "soft_clip", softClipBtn);
     addAndMakeVisible(softClipBtn);
 
-    // 5. Create all Knobs with CC Tags & MouseListeners
-    createKnob("fm_amount", "DONK PUNCH", "CC 1 / 13");
-    createKnob("fm_tune", "FM RATIO", "CC 14");
-    createKnob("fm_env", "DONK TIME", "CC 73");
-    createKnob("wave_position", "TX WAVE", "CC 71");
-    createKnob("time_scale", "TIME SCALE", "CC 12");
-    createKnob("mod_amount", "VEL SENS", "CC 11");
+    // 5. Create all Knobs with Live Value Labels & MouseListeners
+    createKnob("fm_amount", "DONK PUNCH");
+    createKnob("fm_tune", "FM RATIO");
+    createKnob("fm_env", "DONK TIME");
+    createKnob("wave_position", "TX WAVE");
+    createKnob("time_scale", "TIME SCALE");
+    createKnob("mod_amount", "VEL SENS");
 
-    createKnob("transient_click", "CLICK / SNAP", "CC 15");
-    createKnob("tx_crunch", "TX CRUNCH", "CC 16");
-    createKnob("glide_time", "GLIDE", "CC 22");
-    createKnob("filter_cutoff", "LP FILTER", "CC 74");
+    createKnob("transient_click", "CLICK / SNAP");
+    createKnob("tx_crunch", "TX CRUNCH");
+    createKnob("glide_time", "GLIDE");
+    createKnob("filter_cutoff", "LP FILTER");
 
-    createKnob("erosion_grit", "EROSION", "CC 17");
-    createKnob("punch_slam", "PUNCH SLAM", "CC 18");
+    createKnob("erosion_grit", "EROSION");
+    createKnob("punch_slam", "PUNCH SLAM");
 
-    createKnob("sub_gain", "SUB GAIN", "CC 19");
-    createKnob("sub_tone", "SUB TONE", "CC 20");
-    createKnob("reverb_space", "TOP SPREAD", "CC 21");
-    createKnob("master_vol", "MASTER OUT", "CC 7");
+    createKnob("sub_gain", "SUB GAIN");
+    createKnob("sub_tone", "SUB TONE");
+    createKnob("reverb_space", "TOP SPREAD");
+    createKnob("master_vol", "MASTER OUT");
+
+    // Initialize all value labels with current parameter values
+    for (auto& [paramId, ctrl] : controls)
+    {
+        if (ctrl.slider)
+            ctrl.valueLabel->setText(getFormattedValueText(paramId, ctrl.slider->getValue()), juce::dontSendNotification);
+    }
 
     display.setPatchName(presetBox.getText());
 
@@ -93,7 +100,49 @@ ExtasisDonkerAudioProcessorEditor::~ExtasisDonkerAudioProcessorEditor()
     processorRef.onMidiCCReceived = nullptr;
 }
 
-void ExtasisDonkerAudioProcessorEditor::createKnob(const juce::String& paramId, const juce::String& labelText, const juce::String& ccText)
+juce::String ExtasisDonkerAudioProcessorEditor::getFormattedValueText(const juce::String& paramId, double val)
+{
+    if (paramId == "fm_amount")
+        return juce::String((int)val) + " %";
+    if (paramId == "fm_tune")
+        return juce::String(val, 2) + " x";
+    if (paramId == "fm_env")
+        return juce::String((int)val) + " ms";
+    if (paramId == "wave_position")
+    {
+        if (val < 25.0) return "Sine " + juce::String((int)val) + "%";
+        if (val < 75.0) return "Half " + juce::String((int)val) + "%";
+        return "Rect " + juce::String((int)val) + "%";
+    }
+    if (paramId == "time_scale")
+        return (val > 0.0 ? "+" : "") + juce::String((int)val) + " %";
+    if (paramId == "mod_amount")
+        return juce::String((int)val) + " %";
+    if (paramId == "transient_click")
+        return juce::String((int)val) + " %";
+    if (paramId == "tx_crunch")
+        return juce::String((int)val) + " %";
+    if (paramId == "filter_cutoff")
+        return val >= 1000.0 ? juce::String(val * 0.001, 1) + " kHz" : juce::String((int)val) + " Hz";
+    if (paramId == "glide_time")
+        return val <= 0.0 ? "Off" : juce::String((int)val) + " ms";
+    if (paramId == "erosion_grit")
+        return juce::String((int)val) + " %";
+    if (paramId == "punch_slam")
+        return juce::String((int)val) + " %";
+    if (paramId == "sub_gain")
+        return val <= -35.0 ? "-inf dB" : juce::String(val, 1) + " dB";
+    if (paramId == "sub_tone")
+        return juce::String((int)val) + " %";
+    if (paramId == "reverb_space")
+        return juce::String((int)val) + " %";
+    if (paramId == "master_vol")
+        return (val > 0.0 ? "+" : "") + juce::String(val, 1) + " dB";
+
+    return juce::String(val, 1);
+}
+
+void ExtasisDonkerAudioProcessorEditor::createKnob(const juce::String& paramId, const juce::String& labelText)
 {
     KnobControl ctrl;
     ctrl.slider = std::make_unique<juce::Slider>(juce::Slider::RotaryVerticalDrag, juce::Slider::NoTextBox);
@@ -108,11 +157,11 @@ void ExtasisDonkerAudioProcessorEditor::createKnob(const juce::String& paramId, 
     ctrl.label->setColour(juce::Label::textColourId, juce::Colour(0xffc8cfdc));
     addAndMakeVisible(*ctrl.label);
 
-    ctrl.ccLabel = std::make_unique<juce::Label>("", "[" + ccText + "]");
-    ctrl.ccLabel->setJustificationType(juce::Justification::centred);
-    ctrl.ccLabel->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::plain));
-    ctrl.ccLabel->setColour(juce::Label::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.85f));
-    addAndMakeVisible(*ctrl.ccLabel);
+    ctrl.valueLabel = std::make_unique<juce::Label>("", getFormattedValueText(paramId, 0.0));
+    ctrl.valueLabel->setJustificationType(juce::Justification::centred);
+    ctrl.valueLabel->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 9.5f, juce::Font::bold));
+    ctrl.valueLabel->setColour(juce::Label::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
+    addAndMakeVisible(*ctrl.valueLabel);
 
     ctrl.attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         processorRef.getAPVTS(), paramId, *ctrl.slider);
@@ -127,6 +176,13 @@ void ExtasisDonkerAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox
         int idx = presetBox.getSelectedId() - 1;
         processorRef.setCurrentProgram(idx);
         display.setPatchName(presetBox.getText());
+
+        // Update all live value labels
+        for (auto& [paramId, ctrl] : controls)
+        {
+            if (ctrl.slider)
+                ctrl.valueLabel->setText(getFormattedValueText(paramId, ctrl.slider->getValue()), juce::dontSendNotification);
+        }
     }
 }
 
@@ -164,6 +220,13 @@ void ExtasisDonkerAudioProcessorEditor::updateParamDisplayForSlider(juce::Slider
     auto paramId = slider->getName();
     auto val = slider->getValue();
 
+    // 1. Update the live value label under the knob
+    if (controls.find(paramId) != controls.end() && controls[paramId].valueLabel)
+    {
+        controls[paramId].valueLabel->setText(getFormattedValueText(paramId, val), juce::dontSendNotification);
+    }
+
+    // 2. Update LCD screen readout
     if (paramId == "fm_amount")
         display.setParameterReadout("DONK PUNCH [CC 1]", juce::String((int)val) + "% FM MODULATION");
     else if (paramId == "fm_tune")
@@ -257,7 +320,7 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour(0xff8e96a4));
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE // MIDI & AUDITION TRIGGER", 230, 15, 480, 20, juce::Justification::left);
+    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE // LIVE VALUES DISPLAY", 230, 15, 480, 20, juce::Justification::left);
 
     // Right Brand Decal
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -308,7 +371,7 @@ void ExtasisDonkerAudioProcessorEditor::resized()
         {
             controls[id].slider->setBounds(x, y, w, h - 28);
             controls[id].label->setBounds(x - 6, y + h - 28, w + 12, 14);
-            controls[id].ccLabel->setBounds(x - 6, y + h - 14, w + 12, 12);
+            controls[id].valueLabel->setBounds(x - 6, y + h - 14, w + 12, 14);
         }
     };
 
