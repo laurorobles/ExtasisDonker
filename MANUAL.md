@@ -13,10 +13,21 @@ Los sintetizadores FM generales (como DX7, Dexed, FM8, Sytrus) cuentan con decen
 - Los controles reaccionan de manera rápida e intuitiva.
 - Cuenta con un subgrave dedicado en **mono estricto** para garantizar un peso sólido en sistemas de sonido de club.
 - Cada perilla tiene asignado y etiquetado su control **MIDI CC** para integración inmediata con DAWs y controladores de hardware.
+- Cuenta con **lectura instantánea por Mouseover (Hover)** en la pantalla LCD al pasar el ratón por encima de cualquier perilla.
+- Botón de **Trigger / Audition interactivo** con desplazamiento vertical de semitonos (+/-12 st).
 
 ---
 
-## 2. Descripción Detallada de los Controles
+## 2. Botón de Trigger / Audition Interactivo
+
+Ubicado en la parte superior derecha, debajo del selector de presets:
+- **Click (Tap):** Dispara la nota actual (*Note On* al presionar, *Note Off* al soltar).
+- **Click & Hold + Arrastrar Arriba / Abajo (Drag):** Sube o baja el tono en tiempo real de **-12 a +12 semitonos** (una octava arriba o abajo). Permite audicionar el bajo Donk en distintas notas y tonalidades sin necesidad de tocar un teclado MIDI externo.
+- **Mouseover:** La pantalla LCD muestra inmediatamente la nota y el desplazamiento configurado (ej. `TRIGGER NOTE: C1 (+0 st)`).
+
+---
+
+## 3. Descripción Detallada de los Controles
 
 ### Sección 1: FM Synthesis Core (The Donk Heart)
 - **DONK PUNCH [CC 1 / CC 13]:** Controla la intensidad de la modulación FM (Modulation Index). Aumentar este valor añade el brillo metálico y la pegada agresiva del bajo.
@@ -58,18 +69,9 @@ Los sintetizadores FM generales (como DX7, Dexed, FM8, Sytrus) cuentan con decen
 
 ---
 
-## 3. Pantalla LCD Neon TX81Z
+## 4. Pantalla LCD Neon TX81Z y Mouseover Inteligente
 
-La pantalla LCD en verde y amarillo neón reproduce el aspecto de las pantallas de matriz de puntos / calculadora de los 80s:
+La pantalla LCD en verde y amarillo neón reproduce el aspecto de las pantallas de matriz de puntos de los 80s:
 1. **Línea Superior:** Nombre del preset actual.
-2. **Línea Intermedia:** Lectura instantánea en tiempo real del parámetro modificado junto con su valor y número de MIDI CC.
-3. **Osciloscopio Vectorial en Tiempo Real:** Monitor de fósforo que dibuja la forma de onda exacta del bajo reaccionando a la ejecución.
-
----
-
-## 4. Guía de Flujo de Trabajo y Automatización
-
-Para automatizar parámetros en tu DAW:
-1. En **Ableton Live**, simplemente haz clic en cualquier perilla del plugin para que aparezca en el carril de automatización, o envía mensajes MIDI CC según la tabla.
-2. En **FL Studio**, activa *Browse Parameters* o asigna tus perillas MIDI usando *Link to Controller*.
-3. En **Logic Pro**, utiliza Smart Controls o las pistas de automatización directa del plugin.
+2. **Línea Intermedia con Mouseover:** Al pasar el ratón por encima de cualquier perilla (incluso sin hacer clic), la pantalla muestra inmediatamente su nombre, su valor actual con unidades precisas y su código de MIDI CC.
+3. **Osciloscopio Vectorial en Tiempo Real:** Monitor de fósforo que dibuja la forma de onda exacta del bajo reaccionando dinámicamente a cada nota.
