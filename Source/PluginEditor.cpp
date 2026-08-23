@@ -416,7 +416,7 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     // Right Decal: |||||||| TX-CORE DSP
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-    g.drawText("|||||||| TX-CORE DSP", getWidth() - 445, 9, 175, 18, juce::Justification::right);
+    g.drawText("|||||||| TX-CORE DSP", 480, 9, 140, 18, juce::Justification::left);
 
     // Cyan horizontal accent strip
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -454,8 +454,8 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     display.setBounds(48, 48, 640, 170);
 
     // Top Right Bandcamp Link in Header Bar
-    bandcampLinkBtn.setBounds(getWidth() - 265, 7, 215, 22);
-    licenseBadgeButton.setBounds(getWidth() - 360, 7, 85, 22);
+    bandcampLinkBtn.setBounds(getWidth() - 235, 7, 185, 22); // Right aligned
+    licenseBadgeButton.setBounds(getWidth() - 330, 7, 85, 22); // To the left of Bandcamp
 
     // Preset Selector, Navigation & Save Buttons
     presetBox.setBounds(700, 48, 140, 28);
