@@ -170,7 +170,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
 
     display.setPatchName(presetBox.getText());
 
-    setSize(980, 480);
+    setSize(780, 420);
 }
 
 ExtasisDonkerAudioProcessorEditor::~ExtasisDonkerAudioProcessorEditor()
@@ -416,7 +416,7 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     // Right Decal: |||||||| TX-CORE DSP
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-    g.drawText("|||||||| TX-CORE DSP", 480, 9, 140, 18, juce::Justification::left);
+    // Removed TX-CORE DSP for compact UI
 
     // Cyan horizontal accent strip
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -438,11 +438,11 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
         g.drawHorizontalLine((int)r.getY() + 20, r.getX() + 8.0f, r.getRight() - 8.0f);
     };
 
-    // 4 Condensed Sections flush at Y=230, Height=226
-    drawSectionBox(juce::Rectangle<float>(48, 230, 360, 226), "1. FM SYNTHESIS CORE");
-    drawSectionBox(juce::Rectangle<float>(416, 230, 195, 226), "2. TRANSIENT & TONE");
-    drawSectionBox(juce::Rectangle<float>(619, 230, 165, 226), "3. PRE-MASTER FX");
-    drawSectionBox(juce::Rectangle<float>(792, 230, 140, 226), "4. SUB & SPACE");
+    // 4 Condensed Sections flush at Y=200, Height=200
+    drawSectionBox(juce::Rectangle<float>(48, 200, 260, 200), "1. FM SYNTHESIS CORE");
+    drawSectionBox(juce::Rectangle<float>(320, 200, 136, 200), "2. FILTER & TONE");
+    drawSectionBox(juce::Rectangle<float>(468, 200, 136, 200), "3. PRE-MASTER FX");
+    drawSectionBox(juce::Rectangle<float>(616, 200, 136, 200), "4. SUB & SPACE");
 }
 
 void ExtasisDonkerAudioProcessorEditor::resized()
@@ -450,21 +450,22 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     // Global App Bounds
     auto bounds = getLocalBounds();
     activationOverlay.setBounds (bounds);
+    
     // Display in the center top
-    display.setBounds(48, 48, 640, 170);
+    display.setBounds(48, 48, 480, 140);
 
-    // Top Right Bandcamp Link in Header Bar
-    bandcampLinkBtn.setBounds(getWidth() - 235, 7, 185, 22); // Right aligned
-    licenseBadgeButton.setBounds(getWidth() - 330, 7, 85, 22); // To the left of Bandcamp
+    // Top Right Header Buttons
+    bandcampLinkBtn.setBounds(getWidth() - 225, 7, 185, 22); // Right aligned
+    licenseBadgeButton.setBounds(getWidth() - 320, 7, 85, 22); // Left of Bandcamp
 
     // Preset Selector, Navigation & Save Buttons
-    presetBox.setBounds(700, 48, 140, 28);
-    prevPresetBtn.setBounds(844, 48, 25, 28);
-    nextPresetBtn.setBounds(871, 48, 25, 28);
-    savePresetBtn.setBounds(898, 48, 42, 28);
+    presetBox.setBounds(540, 48, 140, 28);
+    prevPresetBtn.setBounds(684, 48, 25, 28);
+    nextPresetBtn.setBounds(711, 48, 25, 28);
+    savePresetBtn.setBounds(738, 48, 40, 28);
 
     // Large Centered Logo Audition Trigger Pad right below Presets
-    triggerBtn.setBounds(700, 84, 240, 134);
+    triggerBtn.setBounds(540, 84, 238, 104);
 
     auto placeKnob = [this](const juce::String& id, int x, int y, int w, int h) {
         if (controls.find(id) != controls.end())
@@ -475,30 +476,33 @@ void ExtasisDonkerAudioProcessorEditor::resized()
         }
     };
 
-    // Section 1: FM Core (2 rows of knobs, condensed flush)
-    placeKnob("fm_amount", 56, 254, 62, 86);
-    placeKnob("fm_tune", 126, 254, 62, 86);
-    placeKnob("fm_env", 196, 254, 62, 86);
-    placeKnob("wave_position", 266, 254, 62, 86);
-    placeKnob("pump_amount", 336, 254, 62, 86);
+    int knobW = 60;
+    int knobH = 80;
 
-    placeKnob("mod_amount", 96, 356, 62, 86);
-    placeKnob("tx_crunch", 176, 356, 62, 86);
-    placeKnob("pitch_drop", 256, 356, 62, 86);
+    // Section 1: FM Core (4x2 grid)
+    placeKnob("fm_amount", 54, 222, knobW, knobH);
+    placeKnob("fm_tune", 118, 222, knobW, knobH);
+    placeKnob("wave_position", 182, 222, knobW, knobH);
+    placeKnob("mod_amount", 246, 222, knobW, knobH);
 
-    // Section 2: Filter & Tone (Condensed flush, now 3 knobs)
-    placeKnob("filter_cutoff", 420, 290, 62, 92);
-    placeKnob("filter_reso", 486, 290, 62, 92);
-    placeKnob("glide_time", 552, 290, 62, 92);
+    placeKnob("fm_env", 54, 312, knobW, knobH);
+    placeKnob("pump_amount", 118, 312, knobW, knobH);
+    placeKnob("tx_crunch", 182, 312, knobW, knobH);
+    placeKnob("pitch_drop", 246, 312, knobW, knobH);
 
-    // Section 3: Pre-Master FX (Reorganized: knobs on top, Soft Clip button directly beneath)
-    placeKnob("erosion_grit", 632, 254, 64, 86);
-    placeKnob("punch_slam", 706, 254, 64, 86);
-    softClipBtn.setBounds(634, 372, 136, 34);
+    // Section 2: Filter & Tone (2x2 grid)
+    placeKnob("filter_cutoff", 326, 222, knobW, knobH);
+    placeKnob("filter_reso", 390, 222, knobW, knobH);
+    placeKnob("glide_time", 326, 312, knobW, knobH);
 
-    // Section 4: Sub & Space (2x2 grid, condensed flush)
-    placeKnob("sub_gain", 800, 254, 60, 86);
-    placeKnob("sub_tone", 862, 254, 60, 86);
-    placeKnob("reverb_space", 800, 356, 60, 86);
-    placeKnob("master_vol", 862, 356, 60, 86);
+    // Section 3: Pre-Master FX (2x2 grid)
+    placeKnob("erosion_grit", 474, 222, knobW, knobH);
+    placeKnob("punch_slam", 538, 222, knobW, knobH);
+    softClipBtn.setBounds(478, 334, 116, 30);
+
+    // Section 4: Sub & Space (2x2 grid)
+    placeKnob("sub_gain", 622, 222, knobW, knobH);
+    placeKnob("sub_tone", 686, 222, knobW, knobH);
+    placeKnob("reverb_space", 622, 312, knobW, knobH);
+    placeKnob("master_vol", 686, 312, knobW, knobH);
 }
