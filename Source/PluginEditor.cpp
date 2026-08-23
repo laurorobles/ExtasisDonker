@@ -41,7 +41,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     };
     addAndMakeVisible(nextPresetBtn);
 
-    // 3. Audition Trigger Button
+    // 3. Audition Trigger Button (Tactile Hardware Keycap, No Text, Pure LED)
     triggerBtn.onNoteOn = [this](int midiNote, float velocity) {
         processorRef.triggerAuditionNote(midiNote, velocity);
     };
@@ -60,7 +60,19 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
         processorRef.getAPVTS(), "soft_clip", softClipBtn);
     addAndMakeVisible(softClipBtn);
 
-    // 5. Create all Knobs with Live Value Labels & MouseListeners
+    // 5. Credits & Bandcamp Button
+    creditLabel.setText("CODED BY @LAUROROBLES", juce::dontSendNotification);
+    creditLabel.setJustificationType(juce::Justification::centredLeft);
+    creditLabel.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
+    creditLabel.setColour(juce::Label::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.9f));
+    addAndMakeVisible(creditLabel);
+
+    bandcampBtn.onClick = []() {
+        juce::URL("https://laurorobles.bandcamp.com").launchInDefaultBrowser();
+    };
+    addAndMakeVisible(bandcampBtn);
+
+    // 6. Create all Knobs with Live Value Labels & MouseListeners
     createKnob("fm_amount", "DONK PUNCH");
     createKnob("fm_tune", "FM RATIO");
     createKnob("fm_env", "DONK TIME");
@@ -81,7 +93,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     createKnob("reverb_space", "TOP SPREAD");
     createKnob("master_vol", "MASTER OUT");
 
-    // Initialize all value labels with current parameter values
+    // Initialize all value labels
     for (auto& [paramId, ctrl] : controls)
     {
         if (ctrl.slider)
@@ -90,7 +102,8 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
 
     display.setPatchName(presetBox.getText());
 
-    setSize(980, 530);
+    // Condensed Dimensions (980 x 480)
+    setSize(980, 480);
 }
 
 ExtasisDonkerAudioProcessorEditor::~ExtasisDonkerAudioProcessorEditor()
@@ -153,13 +166,13 @@ void ExtasisDonkerAudioProcessorEditor::createKnob(const juce::String& paramId, 
 
     ctrl.label = std::make_unique<juce::Label>("", labelText);
     ctrl.label->setJustificationType(juce::Justification::centred);
-    ctrl.label->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
+    ctrl.label->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 9.5f, juce::Font::bold));
     ctrl.label->setColour(juce::Label::textColourId, juce::Colour(0xffc8cfdc));
     addAndMakeVisible(*ctrl.label);
 
     ctrl.valueLabel = std::make_unique<juce::Label>("", getFormattedValueText(paramId, 0.0));
     ctrl.valueLabel->setJustificationType(juce::Justification::centred);
-    ctrl.valueLabel->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 9.5f, juce::Font::bold));
+    ctrl.valueLabel->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::bold));
     ctrl.valueLabel->setColour(juce::Label::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
     addAndMakeVisible(*ctrl.valueLabel);
 
@@ -177,7 +190,6 @@ void ExtasisDonkerAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox
         processorRef.setCurrentProgram(idx);
         display.setPatchName(presetBox.getText());
 
-        // Update all live value labels
         for (auto& [paramId, ctrl] : controls)
         {
             if (ctrl.slider)
@@ -220,13 +232,11 @@ void ExtasisDonkerAudioProcessorEditor::updateParamDisplayForSlider(juce::Slider
     auto paramId = slider->getName();
     auto val = slider->getValue();
 
-    // 1. Update the live value label under the knob
     if (controls.find(paramId) != controls.end() && controls[paramId].valueLabel)
     {
         controls[paramId].valueLabel->setText(getFormattedValueText(paramId, val), juce::dontSendNotification);
     }
 
-    // 2. Update LCD screen readout
     if (paramId == "fm_amount")
         display.setParameterReadout("DONK PUNCH [CC 1]", juce::String((int)val) + "% FM MODULATION");
     else if (paramId == "fm_tune")
@@ -276,7 +286,6 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getChassisColor());
     g.fillRect(bounds);
 
-    // Bevel borders
     g.setColour(juce::Colour(0xff2a2d33));
     g.drawRect(bounds.reduced(0.5f), 1.0f);
 
@@ -292,7 +301,7 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     g.drawVerticalLine((int)leftEar.getRight(), 0.0f, bounds.getBottom());
     g.drawVerticalLine((int)rightEar.getX(), 0.0f, bounds.getBottom());
 
-    // Screw Holes & Rack Screws
+    // Screw Holes
     auto drawScrew = [&g](float x, float y) {
         g.setColour(juce::Colour(0xff090a0c));
         g.fillEllipse(x - 9.0f, y - 9.0f, 18.0f, 18.0f);
@@ -311,26 +320,19 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     drawScrew(rightEar.getCentreX(), getHeight() - 35.0f);
 
     // 3. Top Header: Vintage Silkscreen Logo & Badges
-    auto headerArea = bounds.removeFromTop(48.0f);
-    
-    // Logo
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 18.0f, juce::Font::bold));
-    g.drawText("EXTASIS DONKER", 50, 12, 200, 24, juce::Justification::left);
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 17.0f, juce::Font::bold));
+    g.drawText("EXTASIS DONKER", 50, 11, 190, 22, juce::Justification::left);
 
     g.setColour(juce::Colour(0xff8e96a4));
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE // LIVE VALUES DISPLAY", 230, 15, 480, 20, juce::Justification::left);
-
-    // Right Brand Decal
-    g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.drawText("|||||||| TX-CORE DSP", getWidth() - 250, 14, 200, 20, juce::Justification::right);
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
+    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE", 215, 13, 380, 20, juce::Justification::left);
 
     // Cyan horizontal accent strip
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.fillRect(48, 42, getWidth() - 96, 2);
+    g.fillRect(48, 38, getWidth() - 96, 2);
 
-    // 4. Section Framing & Panels
+    // 4. Section Framing & Panels (Condensed Height: 218px)
     auto drawSectionBox = [&g](juce::Rectangle<float> r, const juce::String& title) {
         g.setColour(juce::Colour(0xff1b1e22));
         g.fillRoundedRectangle(r, 4.0f);
@@ -339,32 +341,36 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
         // Section Title Header
         g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-        g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-        g.drawText(title, (int)r.getX() + 8, (int)r.getY() + 5, (int)r.getWidth() - 16, 16, juce::Justification::left);
+        g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
+        g.drawText(title, (int)r.getX() + 8, (int)r.getY() + 4, (int)r.getWidth() - 16, 16, juce::Justification::left);
 
         g.setColour(juce::Colour(0x3300d4d4));
-        g.drawHorizontalLine((int)r.getY() + 22, r.getX() + 8.0f, r.getRight() - 8.0f);
+        g.drawHorizontalLine((int)r.getY() + 20, r.getX() + 8.0f, r.getRight() - 8.0f);
     };
 
-    // 4 Distinct Sections
-    drawSectionBox(juce::Rectangle<float>(48, 230, 360, 285), "1. FM SYNTHESIS (THE DONK)");
-    drawSectionBox(juce::Rectangle<float>(416, 230, 200, 285), "2. TRANSIENT & TONE");
-    drawSectionBox(juce::Rectangle<float>(624, 230, 160, 285), "3. PRE-MASTER FX");
-    drawSectionBox(juce::Rectangle<float>(792, 230, 140, 285), "4. SUB & SPACE");
+    // 4 Condensed Sections flush at Y=230, Height=226
+    drawSectionBox(juce::Rectangle<float>(48, 230, 360, 226), "1. FM SYNTHESIS CORE");
+    drawSectionBox(juce::Rectangle<float>(416, 230, 195, 226), "2. TRANSIENT & TONE");
+    drawSectionBox(juce::Rectangle<float>(619, 230, 165, 226), "3. PRE-MASTER FX");
+    drawSectionBox(juce::Rectangle<float>(792, 230, 140, 226), "4. SUB & SPACE");
 }
 
 void ExtasisDonkerAudioProcessorEditor::resized()
 {
     // Display in the center top
-    display.setBounds(48, 52, 640, 168);
+    display.setBounds(48, 48, 640, 170);
 
-    // Top Right Controls (Preset Selector + Audition Trigger)
-    presetBox.setBounds(700, 56, 180, 28);
-    prevPresetBtn.setBounds(885, 56, 28, 28);
-    nextPresetBtn.setBounds(917, 56, 28, 28);
+    // Preset Selector
+    presetBox.setBounds(700, 48, 175, 28);
+    prevPresetBtn.setBounds(880, 48, 28, 28);
+    nextPresetBtn.setBounds(912, 48, 28, 28);
 
-    // Audition Trigger Button below Preset Box
-    triggerBtn.setBounds(700, 92, 245, 34);
+    // Sleek Tactile Trigger Button (Centered circular/square cap with glowing LED)
+    triggerBtn.setBounds(700, 84, 52, 52);
+
+    // Credits & Bandcamp button next to trigger
+    creditLabel.setBounds(762, 88, 175, 18);
+    bandcampBtn.setBounds(762, 108, 175, 26);
 
     auto placeKnob = [this](const juce::String& id, int x, int y, int w, int h) {
         if (controls.find(id) != controls.end())
@@ -375,29 +381,29 @@ void ExtasisDonkerAudioProcessorEditor::resized()
         }
     };
 
-    // Section 1: FM Core
-    placeKnob("fm_amount", 58, 258, 62, 88);
-    placeKnob("fm_tune", 128, 258, 62, 88);
-    placeKnob("fm_env", 198, 258, 62, 88);
-    placeKnob("wave_position", 268, 258, 62, 88);
-    placeKnob("time_scale", 338, 258, 62, 88);
+    // Section 1: FM Core (2 rows of knobs, condensed flush)
+    placeKnob("fm_amount", 56, 254, 62, 86);
+    placeKnob("fm_tune", 126, 254, 62, 86);
+    placeKnob("fm_env", 196, 254, 62, 86);
+    placeKnob("wave_position", 266, 254, 62, 86);
+    placeKnob("time_scale", 336, 254, 62, 86);
 
-    placeKnob("mod_amount", 98, 382, 62, 88);
-    placeKnob("tx_crunch", 178, 382, 62, 88);
-    placeKnob("transient_click", 258, 382, 62, 88);
+    placeKnob("mod_amount", 96, 356, 62, 86);
+    placeKnob("tx_crunch", 176, 356, 62, 86);
+    placeKnob("transient_click", 256, 356, 62, 86);
 
-    // Section 2: Transient & Tone
-    placeKnob("filter_cutoff", 432, 258, 68, 88);
-    placeKnob("glide_time", 522, 258, 68, 88);
+    // Section 2: Transient & Tone (Condensed flush)
+    placeKnob("filter_cutoff", 430, 290, 72, 92);
+    placeKnob("glide_time", 522, 290, 72, 92);
 
-    // Section 3: Pre-Master FX (Erosion & Slam + Soft Clip button)
-    placeKnob("erosion_grit", 640, 258, 62, 88);
-    placeKnob("punch_slam", 710, 258, 62, 88);
-    softClipBtn.setBounds(642, 400, 125, 34);
+    // Section 3: Pre-Master FX (Reorganized: knobs on top, Soft Clip button directly beneath)
+    placeKnob("erosion_grit", 632, 254, 64, 86);
+    placeKnob("punch_slam", 706, 254, 64, 86);
+    softClipBtn.setBounds(634, 372, 136, 34);
 
-    // Section 4: Sub & Space
-    placeKnob("sub_gain", 802, 258, 60, 88);
-    placeKnob("sub_tone", 864, 258, 60, 88);
-    placeKnob("reverb_space", 802, 382, 60, 88);
-    placeKnob("master_vol", 864, 382, 60, 88);
+    // Section 4: Sub & Space (2x2 grid, condensed flush)
+    placeKnob("sub_gain", 800, 254, 60, 86);
+    placeKnob("sub_tone", 862, 254, 60, 86);
+    placeKnob("reverb_space", 800, 356, 60, 86);
+    placeKnob("master_vol", 862, 356, 60, 86);
 }

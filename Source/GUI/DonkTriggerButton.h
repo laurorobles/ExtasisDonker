@@ -26,7 +26,7 @@ public:
     std::function<void(const juce::String& title, const juce::String& desc)> onStatusChange;
 
 private:
-    int baseMidiNote = 36; // C1 (Standard punchy Donk octave)
+    int baseMidiNote = 36; // C1
     int semitoneOffset = 0; // -12 to +12
     bool isTriggerActive = false;
     float dragStartY = 0.0f;

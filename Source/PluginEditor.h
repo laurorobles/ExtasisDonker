@@ -36,12 +36,16 @@ private:
     juce::TextButton prevPresetBtn { "<" };
     juce::TextButton nextPresetBtn { ">" };
 
-    // Audition Trigger Button (Click & Drag for +/- 12 semitones)
+    // Audition Trigger Button (Sleek LED Tactile Key, No Text, Drag for +/-12st)
     ExtasisGUI::DonkTriggerButton triggerBtn;
 
     // Soft Clip Toggle Button
     juce::TextButton softClipBtn { "SOFT CLIP" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> softClipAttachment;
+
+    // Bandcamp Button & Credits
+    juce::TextButton bandcampBtn { "BANDCAMP ↗" };
+    juce::Label creditLabel;
 
     // Sliders & Labels
     struct KnobControl
