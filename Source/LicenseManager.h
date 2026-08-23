@@ -4,8 +4,8 @@
 class LicenseManager
 {
 public:
-    static constexpr uint64_t SALT_1 = 0xA784F19E3B5D28C6ULL;
-    static constexpr uint64_t SALT_2 = 0x6E4C90B21F87D35AULL;
+    static constexpr uint64_t SALT_1 = 0xB894E28F4A6C39D7ULL;
+    static constexpr uint64_t SALT_2 = 0x7F5D81C32E96B44BULL;
 
     // Returns the license file path in AppData/Application Support
     static juce::File getLicenseFile()
@@ -46,9 +46,10 @@ public:
             return false;
 
         uint64_t seed = ((uint64_t)val1 << 32) | val1;
-        uint32_t expected2 = (uint32_t)(((seed ^ SALT_1) * 0x45D9F3BULL) >> 16) & 0xFFFF;
-        uint32_t expected3 = (uint32_t)((((seed << 13) | (seed >> 19)) ^ SALT_2) * 0x27D4EB2DULL >> 16) & 0xFFFF;
-        uint32_t expected4 = ((val1 ^ expected2 ^ expected3 ^ 0xBEEF) * 0x119DE1ULL) & 0xFFFF;
+        uint32_t expected2 = (uint32_t)(((seed ^ SALT_1) * 0x39E4F2BULL) >> 16) & 0xFFFF;
+        uint64_t rot = ((seed << 11) | (seed >> 21));
+        uint32_t expected3 = (uint32_t)(((rot ^ SALT_2) * 0x18C3FA4DULL) >> 16) & 0xFFFF;
+        uint32_t expected4 = ((val1 ^ expected2 ^ expected3 ^ 0xCAFE) * 0x228BA3ULL) & 0xFFFF;
 
         return (val2 == expected2 && val3 == expected3 && val4 == expected4);
     }
