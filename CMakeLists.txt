@@ -21,7 +21,7 @@ juce_add_plugin(ExtasisDonker
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
-    COPY_PLUGIN_AFTER_BUILD FALSE
+    COPY_PLUGIN_AFTER_BUILD TRUE
 )
 
 juce_generate_juce_header(ExtasisDonker)
@@ -56,4 +56,21 @@ target_link_libraries(ExtasisDonker PRIVATE
     juce::juce_dsp
     juce::juce_gui_basics
     juce::juce_gui_extra
+)
+
+# Custom post-build step to guarantee installation to ~/Library/Audio/Plug-Ins/
+add_custom_command(TARGET ExtasisDonker_VST3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/Library/Audio/Plug-Ins/VST3"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "$<TARGET_BUNDLE_DIR:ExtasisDonker_VST3>"
+        "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/ExtasisDonker.vst3"
+    COMMENT "Installing VST3 to ~/Library/Audio/Plug-Ins/VST3/"
+)
+
+add_custom_command(TARGET ExtasisDonker_AU POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/Library/Audio/Plug-Ins/Components"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "$<TARGET_BUNDLE_DIR:ExtasisDonker_AU>"
+        "$ENV{HOME}/Library/Audio/Plug-Ins/Components/ExtasisDonker.component"
+    COMMENT "Installing AU to ~/Library/Audio/Plug-Ins/Components/"
 )
