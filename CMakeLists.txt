@@ -13,6 +13,8 @@ juce_add_binary_data(ExtasisDonker_Data
 )
 
 juce_add_plugin(ExtasisDonker
+    COMPANY_NAME "Extasis Records"
+    BUNDLE_ID "com.laurorobles.ExtasisDonker"
     PLUGIN_MANUFACTURER_CODE Exta
     PLUGIN_CODE Ednk
     FORMATS VST3 AU Standalone
@@ -21,6 +23,8 @@ juce_add_plugin(ExtasisDonker
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
+    ICON_BIG assets/logo.png
+    ICON_SMALL assets/logo.png
     COPY_PLUGIN_AFTER_BUILD TRUE
 )
 
@@ -58,7 +62,17 @@ target_link_libraries(ExtasisDonker PRIVATE
     juce::juce_gui_extra
 )
 
-# Custom post-build step to guarantee installation to ~/Library/Audio/Plug-Ins/
+# Custom post-build step to guarantee installation and app icon
+add_custom_command(TARGET ExtasisDonker_Standalone POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.icns"
+        "$<TARGET_BUNDLE_DIR:ExtasisDonker_Standalone>/Contents/Resources/Icon.icns"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.icns"
+        "$<TARGET_BUNDLE_DIR:ExtasisDonker_Standalone>/Contents/Resources/logo.icns"
+    COMMENT "Copying logo.icns to Standalone app bundle"
+)
+
 add_custom_command(TARGET ExtasisDonker_VST3 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/Library/Audio/Plug-Ins/VST3"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
