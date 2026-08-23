@@ -14,6 +14,7 @@ public:
     {
         currentSampleRate = spec.sampleRate > 0.0 ? spec.sampleRate : 44100.0;
 
+
         // Crossover filters at 180 Hz
         auto crossoverCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowPass(currentSampleRate, 180.0f);
         lowpassFilterL.coefficients = crossoverCoeffs;
@@ -23,10 +24,31 @@ public:
         highpassFilterL.coefficients = highpassCoeffs;
         highpassFilterR.coefficients = highpassCoeffs;
 
+        // Sub 35Hz DC Blocker / High-Pass
+        auto dcBlockCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighPass(currentSampleRate, 35.0f);
+        dcBlockerL.coefficients = dcBlockCoeffs;
+        dcBlockerR.coefficients = dcBlockCoeffs;
+
+        // 1.5kHz Presence / Click EQ Boost (+4dB, Q=1.0)
+        auto presenceCoeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(currentSampleRate, 1500.0f, 1.0f, juce::Decibels::decibelsToGain(4.0f));
+        presenceEqL.coefficients = presenceCoeffs;
+        presenceEqR.coefficients = presenceCoeffs;
+
+
         lowpassFilterL.reset();
         lowpassFilterR.reset();
         highpassFilterL.reset();
         highpassFilterR.reset();
+        dcBlockerL.reset();
+        dcBlockerR.reset();
+        presenceEqL.reset();
+        presenceEqR.reset();
+
+        dcBlockerL.reset();
+        dcBlockerR.reset();
+        presenceEqL.reset();
+        presenceEqR.reset();
+
 
         delayBufferL.resize(4096, 0.0f);
         delayBufferR.resize(4096, 0.0f);
@@ -38,10 +60,16 @@ public:
 
     void reset()
     {
+
         lowpassFilterL.reset();
         lowpassFilterR.reset();
         highpassFilterL.reset();
         highpassFilterR.reset();
+        dcBlockerL.reset();
+        dcBlockerR.reset();
+        presenceEqL.reset();
+        presenceEqR.reset();
+
         std::fill(delayBufferL.begin(), delayBufferL.end(), 0.0f);
         std::fill(delayBufferR.begin(), delayBufferR.end(), 0.0f);
         writePos = 0;
@@ -63,7 +91,15 @@ public:
                               float punchSlamAmount,
                               bool enableSoftClip)
     {
+
+        // 0. Base EQ (35Hz HPF and 1.5kHz Presence Boost)
+        left = dcBlockerL.processSample(left);
+        right = dcBlockerR.processSample(right);
+        left = presenceEqL.processSample(left);
+        right = presenceEqR.processSample(right);
+
         // 1. Erosion / 12-Bit DAC Grit (applied before crossover so highs get the metallic sizzle)
+
         if (erosionAmount > 0.001f)
         {
             // Modulate with high-frequency sine/noise ring mod around 2.8 kHz
@@ -179,12 +215,18 @@ public:
         right = outR;
     }
 
+
 private:
     double currentSampleRate = 44100.0;
     juce::dsp::IIR::Filter<float> lowpassFilterL;
     juce::dsp::IIR::Filter<float> lowpassFilterR;
     juce::dsp::IIR::Filter<float> highpassFilterL;
     juce::dsp::IIR::Filter<float> highpassFilterR;
+    juce::dsp::IIR::Filter<float> dcBlockerL;
+    juce::dsp::IIR::Filter<float> dcBlockerR;
+    juce::dsp::IIR::Filter<float> presenceEqL;
+    juce::dsp::IIR::Filter<float> presenceEqR;
+
 
     std::vector<float> delayBufferL;
     std::vector<float> delayBufferR;

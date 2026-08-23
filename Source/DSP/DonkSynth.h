@@ -145,8 +145,10 @@ public:
         updateGlide(glideMs);
 
         // Update envelope parameters (timeScale fixed to 1.0)
-        fmEnvelope.setParameters(0.5f, fmEnvDecayMs, 0.0f, 40.0f, 1.0f);
-        ampEnvelope.setParameters(1.0f, 800.0f, 0.7f, 60.0f, 1.0f);
+        // Modulator (FM) Envelope: Very short decay, 0 sustain, short release for the 'click'
+        fmEnvelope.setParameters(1.0f, fmEnvDecayMs, 0.0f, 20.0f, 1.0f);
+        // Carrier (Amp) Envelope: Medium-short decay, 0 sustain, short release for true Donk bounce
+        ampEnvelope.setParameters(1.0f, 900.0f, 0.0f, 30.0f, 1.0f);
 
         // Filter cutoff & resonance
         float velCutoffScale = 1.0f + (currentVelocity - 0.5f) * modSens * 0.6f;
