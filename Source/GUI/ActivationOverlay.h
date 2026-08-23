@@ -89,7 +89,7 @@ public:
 
         g.setFont (juce::FontOptions (9.5f, juce::Font::plain));
         g.setColour (juce::Colour (0xff718093));
-        g.drawText ("extasisrecords.bandcamp.com",
+        g.drawText ("laurorobles.gumroad.com",
                     modalX + 20, modalY + modalH - 24, modalW - 40, 16, juce::Justification::centred);
     }
 

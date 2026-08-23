@@ -3,6 +3,9 @@
 ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonkerAudioProcessor& p)
     : AudioProcessorEditor(&p), processorRef(p)
 {
+    addAndMakeVisible(gumroadLinkBtn);
+    gumroadLinkBtn.setColour(juce::HyperlinkButton::textColourId, juce::Colours::yellow);
+
     isActivated = LicenseManager::isLicensed();
 
     addAndMakeVisible (licenseBadgeButton);
@@ -448,6 +451,8 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
 void ExtasisDonkerAudioProcessorEditor::resized()
 {
+    gumroadLinkBtn.setBounds(getWidth() - 110, 10, 100, 24);
+
     // Global App Bounds
     auto bounds = getLocalBounds();
     activationOverlay.setBounds (bounds);

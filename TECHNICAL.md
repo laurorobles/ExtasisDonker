@@ -116,3 +116,6 @@ Esta curva garantiza que la señal nunca sobrepase \(\pm 1.0\) (0 dBFS) y genera
 - `DSP/SnappyEnvelope.h`: Envolventes ultra rápidas (Pitch Drop de 12ms y FM Decay de 5ms a 500ms).
 - `DSP/StereoProcessor.h`: Erosion (12-bit), Punch Slam, Soft Clipper y Crossover de 180Hz (Mono-Lock & Spread).
 - `LicenseManager.h`: Validación criptográfica offline de la llave `EXTD-XXXX-XXXX-XXXX-XXXX`.
+
+
+> **Licencias:** Consigue tu licencia oficial en [http://laurorobles.gumroad.com](http://laurorobles.gumroad.com)

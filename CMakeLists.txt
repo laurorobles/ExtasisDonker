@@ -17,7 +17,7 @@ juce_add_plugin(ExtasisDonker
     BUNDLE_ID "com.laurorobles.ExtasisDonker"
     PLUGIN_MANUFACTURER_CODE Exta
     PLUGIN_CODE Ednk
-    FORMATS VST3 AU Standalone
+    FORMATS VST3 AU Standalone CLAP
     PRODUCT_NAME "ExtasisDonker"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE

@@ -49,6 +49,8 @@ public:
     std::function<void(int ccNumber, float value)> onMidiCCReceived;
 
 private:
+    uint64_t samplesProcessed = 0;
+
     juce::AudioProcessorValueTreeState apvts;
     ExtasisDSP::DonkSynth synth;
     int currentProgramIndex = 0;

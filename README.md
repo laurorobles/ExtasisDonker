@@ -107,3 +107,6 @@ Upon purchase from our official store or partner marketplaces, you will receive 
 
 - **DSP Architecture & Development**: Lauro Robles (`@laurorobles`)
 - **Label & Releases**: [Extasis Records](https://extasisrecords.bandcamp.com)
+
+
+> **Licencias:** Consigue tu licencia oficial en [http://laurorobles.gumroad.com](http://laurorobles.gumroad.com)

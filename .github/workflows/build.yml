@@ -1,4 +1,4 @@
-name: Build Extasis Donker (Windows & macOS)
+name: Build ExtasisDonker (Windows, macOS, Linux)
 
 on:
   push:
@@ -23,6 +23,10 @@ jobs:
             os: macos-latest
             artifact_name: ExtasisDonker-macOS
             cmake_args: -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DJUCE_COPY_PLUGIN_AFTER_BUILD=FALSE
+          - name: Linux (x64)
+            os: ubuntu-latest
+            artifact_name: ExtasisDonker-Linux
+            cmake_args: -DCMAKE_BUILD_TYPE=Release -DJUCE_COPY_PLUGIN_AFTER_BUILD=FALSE
 
     steps:
       - name: Checkout Code
@@ -30,11 +34,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libjack-jackd2-dev libcurl4-openssl-dev libfreetype6-dev libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev mesa-common-dev ninja-build
+
       - name: Setup MSVC Developer Command Prompt (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup Ninja
+      - name: Setup Ninja (Mac/Win)
+        if: runner.os != 'Linux'
         uses: ashley-taylor/setup-ninja@v1.0.0
 
       - name: Configure CMake
@@ -45,62 +56,45 @@ jobs:
         run: |
           cmake --build build --config Release --parallel
 
-      - name: Prepare Windows Artifacts
-        if: runner.os == 'Windows'
+      - name: Prepare Artifacts
         shell: bash
         run: |
           mkdir -p artifacts
-          for path in "build/ExtasisDonker_artefacts/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/VST3/Extasis Donker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/Extasis Donker.vst3"; do
-            if [ -d "$path" ]; then
-              cp -r "$path" artifacts/
-              break
-            fi
-          done
-          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.exe" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.exe" "build/ExtasisDonker_artefacts/Standalone/Extasis Donker.exe" "build/ExtasisDonker_artefacts/Release/Standalone/Extasis Donker.exe"; do
-            if [ -f "$path" ]; then
-              cp "$path" artifacts/
-              break
-            fi
-          done
-          if [ -d "installer" ]; then
-            cp -r installer artifacts/
-          fi
-          for doc in MANUAL.md README.md PRESENTATION.md TECHNICAL.md FICHA_TECNICA.md ARCHITECTURE.md; do
-            if [ -f "$doc" ]; then cp "$doc" artifacts/; fi
+          
+          # VST3
+          for path in "build/ExtasisDonker_artefacts/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/VST3/Extasis *.vst3" "build/ExtasisDonker_artefacts/Release/VST3/Extasis *.vst3"; do
+            if [ -d "$path" ]; then cp -r "$path" artifacts/; fi
           done
           
-
-      - name: Prepare macOS Artifacts
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          mkdir -p artifacts
-          for path in "build/ExtasisDonker_artefacts/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/VST3/Extasis Donker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/Extasis Donker.vst3"; do
-            if [ -d "$path" ]; then
-              cp -r "$path" artifacts/
-              break
-            fi
+          # AU
+          for path in "build/ExtasisDonker_artefacts/AU/ExtasisDonker.component" "build/ExtasisDonker_artefacts/Release/AU/ExtasisDonker.component"; do
+            if [ -d "$path" ]; then cp -r "$path" artifacts/; fi
           done
-          for path in "build/ExtasisDonker_artefacts/AU/ExtasisDonker.component" "build/ExtasisDonker_artefacts/Release/AU/ExtasisDonker.component" "build/ExtasisDonker_artefacts/AU/Extasis Donker.component" "build/ExtasisDonker_artefacts/Release/AU/Extasis Donker.component"; do
-            if [ -d "$path" ]; then
-              cp -r "$path" artifacts/
-              break
-            fi
+          
+          # CLAP
+          for path in "build/ExtasisDonker_artefacts/CLAP/ExtasisDonker.clap" "build/ExtasisDonker_artefacts/Release/CLAP/ExtasisDonker.clap"; do
+            if [ -f "$path" ]; then cp "$path" artifacts/; fi
           done
-          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.app" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.app" "build/ExtasisDonker_artefacts/Standalone/Extasis Donker.app" "build/ExtasisDonker_artefacts/Release/Standalone/Extasis Donker.app"; do
-            if [ -d "$path" ]; then
-              cp -r "$path" artifacts/
-              break
-            fi
+          
+          # Standalone Win
+          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.exe" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.exe"; do
+            if [ -f "$path" ]; then cp "$path" artifacts/; fi
           done
+          
+          # Standalone Mac
+          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.app" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.app"; do
+            if [ -d "$path" ]; then cp -r "$path" artifacts/; fi
+          done
+          
+          # Docs & Installer
           if [ -d "installer" ]; then
             cp -r installer artifacts/
             chmod +x artifacts/installer/INSTALL_MAC.command 2>/dev/null || true
+            chmod +x artifacts/installer/INSTALL_LINUX.sh 2>/dev/null || true
           fi
           for doc in MANUAL.md README.md PRESENTATION.md TECHNICAL.md FICHA_TECNICA.md ARCHITECTURE.md; do
             if [ -f "$doc" ]; then cp "$doc" artifacts/; fi
           done
-          
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

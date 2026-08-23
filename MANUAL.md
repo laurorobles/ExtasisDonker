@@ -87,3 +87,6 @@ La pantalla LCD en verde y amarillo neón reproduce el aspecto de las pantallas 
 - Tienes 10 minutos para probar las capacidades del sintetizador libremente.
 - Haz clic en **ACTIVATE** e introduce la clave oficial de 16 caracteres (`EXTD-XXXX-XXXX-XXXX-XXXX`) entregada en la compra oficial en Bandcamp.
 - Una vez activado con éxito, el mensaje en verde aparecerá, y **el modal de activación y el botón desaparecerán por completo** de la interfaz, dejando el plugin validado y limpio de forma permanente.
+
+
+> **Licencias:** Consigue tu licencia oficial en [http://laurorobles.gumroad.com](http://laurorobles.gumroad.com)
