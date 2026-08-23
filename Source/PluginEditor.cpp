@@ -62,7 +62,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
 
     // 5. Bandcamp Link at far right of name bar
     bandcampLinkBtn.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold), false, juce::Justification::centredRight);
-    bandcampLinkBtn.setColour(juce::HyperlinkButton::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.9f));
+    bandcampLinkBtn.setColour(juce::HyperlinkButton::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.95f));
     addAndMakeVisible(bandcampLinkBtn);
 
     // 6. Create all Knobs with Live Value Labels & MouseListeners
@@ -311,15 +311,24 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     drawScrew(rightEar.getCentreX(), 35.0f);
     drawScrew(rightEar.getCentreX(), getHeight() - 35.0f);
 
-    // 3. Top Header: Title, Subtitle and Bandcamp
+    // 3. Top Header: Title, Subtitle, TX-CORE DSP Decal
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 17.0f, juce::Font::bold));
-    g.drawText("EXTASIS DONKER", 50, 7, 190, 20, juce::Justification::left);
+    g.drawText("EXTASIS DONKER", 50, 7, 185, 20, juce::Justification::left);
+
+    g.setColour(juce::Colour(0xff8e96a4));
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
+    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE", 215, 9, 360, 18, juce::Justification::left);
 
     // coded by @laurorobles in tiny font right below the title
-    g.setColour(juce::Colour(0xff8e96a4));
+    g.setColour(juce::Colour(0xff707a8a));
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold));
     g.drawText("coded by @laurorobles", 52, 27, 220, 12, juce::Justification::left);
+
+    // Right Decal: |||||||| TX-CORE DSP
+    g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
+    g.drawText("|||||||| TX-CORE DSP", getWidth() - 445, 9, 175, 18, juce::Justification::right);
 
     // Cyan horizontal accent strip
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -354,7 +363,7 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     display.setBounds(48, 48, 640, 170);
 
     // Top Right Bandcamp Link in Header Bar
-    bandcampLinkBtn.setBounds(getWidth() - 280, 10, 230, 22);
+    bandcampLinkBtn.setBounds(getWidth() - 265, 7, 215, 22);
 
     // Preset Selector
     presetBox.setBounds(700, 48, 175, 28);
