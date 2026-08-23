@@ -34,6 +34,8 @@ target_sources(ExtasisDonker PRIVATE
     Source/GUI/TX81ZLookAndFeel.cpp
     Source/GUI/TX81ZDisplay.h
     Source/GUI/TX81ZDisplay.cpp
+    Source/GUI/DonkTriggerButton.h
+    Source/GUI/DonkTriggerButton.cpp
 )
 
 target_compile_definitions(ExtasisDonker PUBLIC

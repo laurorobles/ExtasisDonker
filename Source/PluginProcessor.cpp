@@ -142,6 +142,17 @@ void ExtasisDonkerAudioProcessor::setCurrentProgram(int index)
     }
 }
 
+void ExtasisDonkerAudioProcessor::triggerAuditionNote(int noteNumber, float velocity)
+{
+    synth.triggerNote(noteNumber, velocity, false);
+}
+
+void ExtasisDonkerAudioProcessor::releaseAuditionNote(int noteNumber)
+{
+    juce::MidiMessage off = juce::MidiMessage::noteOff(1, noteNumber);
+    synth.handleMidiEvent(off);
+}
+
 void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
 {
     auto setP = [this](const juce::String& id, float val) {
@@ -235,7 +246,7 @@ void ExtasisDonkerAudioProcessor::handleMidiCC(int ccNumber, int ccValue)
 
     switch (ccNumber)
     {
-        case 1:  // ModWheel -> Donk Punch
+        case 1:
         case 13: mapParam("fm_amount"); break;
         case 14: mapParam("fm_tune"); break;
         case 71: mapParam("wave_position"); break;
@@ -251,7 +262,7 @@ void ExtasisDonkerAudioProcessor::handleMidiCC(int ccNumber, int ccValue)
         case 74: mapParam("filter_cutoff"); break;
         case 21: mapParam("reverb_space"); break;
         case 22: mapParam("glide_time"); break;
-        case 23: // Soft Clip Toggle
+        case 23:
             if (auto* param = apvts.getParameter("soft_clip"))
                 param->setValueNotifyingHost(normVal >= 0.5f ? 1.0f : 0.0f);
             break;

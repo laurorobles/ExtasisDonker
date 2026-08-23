@@ -41,15 +41,26 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     };
     addAndMakeVisible(nextPresetBtn);
 
-    // 3. Soft Clip Button
+    // 3. Audition Trigger Button
+    triggerBtn.onNoteOn = [this](int midiNote, float velocity) {
+        processorRef.triggerAuditionNote(midiNote, velocity);
+    };
+    triggerBtn.onNoteOff = [this](int midiNote) {
+        processorRef.releaseAuditionNote(midiNote);
+    };
+    triggerBtn.onStatusChange = [this](const juce::String& title, const juce::String& desc) {
+        display.setParameterReadout(title, desc);
+    };
+    addAndMakeVisible(triggerBtn);
+
+    // 4. Soft Clip Button
     softClipBtn.setClickingTogglesState(true);
     softClipBtn.addListener(this);
     softClipAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processorRef.getAPVTS(), "soft_clip", softClipBtn);
     addAndMakeVisible(softClipBtn);
 
-    // 4. Create all Knobs with CC Tags
-    // Section 1: FM Core
+    // 5. Create all Knobs with CC Tags & MouseListeners
     createKnob("fm_amount", "DONK PUNCH", "CC 1 / 13");
     createKnob("fm_tune", "FM RATIO", "CC 14");
     createKnob("fm_env", "DONK TIME", "CC 73");
@@ -57,17 +68,14 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     createKnob("time_scale", "TIME SCALE", "CC 12");
     createKnob("mod_amount", "VEL SENS", "CC 11");
 
-    // Section 2: Transient & Tone
     createKnob("transient_click", "CLICK / SNAP", "CC 15");
     createKnob("tx_crunch", "TX CRUNCH", "CC 16");
     createKnob("glide_time", "GLIDE", "CC 22");
     createKnob("filter_cutoff", "LP FILTER", "CC 74");
 
-    // Section 3: Pre-Master FX (Erosion & Slam)
     createKnob("erosion_grit", "EROSION", "CC 17");
     createKnob("punch_slam", "PUNCH SLAM", "CC 18");
 
-    // Section 4: Sub & Space
     createKnob("sub_gain", "SUB GAIN", "CC 19");
     createKnob("sub_tone", "SUB TONE", "CC 20");
     createKnob("reverb_space", "TOP SPREAD", "CC 21");
@@ -90,6 +98,7 @@ void ExtasisDonkerAudioProcessorEditor::createKnob(const juce::String& paramId, 
     KnobControl ctrl;
     ctrl.slider = std::make_unique<juce::Slider>(juce::Slider::RotaryVerticalDrag, juce::Slider::NoTextBox);
     ctrl.slider->addListener(this);
+    ctrl.slider->addMouseListener(this, false);
     ctrl.slider->setName(paramId);
     addAndMakeVisible(*ctrl.slider);
 
@@ -130,8 +139,28 @@ void ExtasisDonkerAudioProcessorEditor::buttonClicked(juce::Button* button)
     }
 }
 
+void ExtasisDonkerAudioProcessorEditor::mouseEnter(const juce::MouseEvent& e)
+{
+    if (auto* slider = dynamic_cast<juce::Slider*>(e.eventComponent))
+    {
+        updateParamDisplayForSlider(slider);
+    }
+}
+
+void ExtasisDonkerAudioProcessorEditor::mouseExit(const juce::MouseEvent&)
+{
+}
+
 void ExtasisDonkerAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
+    updateParamDisplayForSlider(slider);
+}
+
+void ExtasisDonkerAudioProcessorEditor::updateParamDisplayForSlider(juce::Slider* slider)
+{
+    if (slider == nullptr)
+        return;
+
     auto paramId = slider->getName();
     auto val = slider->getValue();
 
@@ -142,11 +171,11 @@ void ExtasisDonkerAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (paramId == "wave_position")
     {
         if (val < 25.0f)
-            display.setParameterReadout("TX WAVE [CC 71]", "PURE SINE (W1)");
+            display.setParameterReadout("TX WAVE [CC 71]", "PURE SINE (W1) - " + juce::String((int)val) + "%");
         else if (val < 75.0f)
-            display.setParameterReadout("TX WAVE [CC 71]", "TX81Z HALF-SINE (W5)");
+            display.setParameterReadout("TX WAVE [CC 71]", "TX81Z HALF-SINE (W5) - " + juce::String((int)val) + "%");
         else
-            display.setParameterReadout("TX WAVE [CC 71]", "FULL RECTIFIED SINE (W3)");
+            display.setParameterReadout("TX WAVE [CC 71]", "FULL RECTIFIED SINE (W3) - " + juce::String((int)val) + "%");
     }
     else if (paramId == "fm_env")
         display.setParameterReadout("DONK TIME [CC 73]", juce::String((int)val) + " ms DECAY");
@@ -228,7 +257,7 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour(0xff8e96a4));
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE // FULL MIDI/DAW AUTOMATION", 230, 15, 480, 20, juce::Justification::left);
+    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE // MIDI & AUDITION TRIGGER", 230, 15, 480, 20, juce::Justification::left);
 
     // Right Brand Decal
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -264,12 +293,15 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 void ExtasisDonkerAudioProcessorEditor::resized()
 {
     // Display in the center top
-    display.setBounds(48, 52, 650, 168);
+    display.setBounds(48, 52, 640, 168);
 
-    // Preset Controls right of display
-    presetBox.setBounds(710, 56, 180, 28);
-    prevPresetBtn.setBounds(895, 56, 28, 28);
-    nextPresetBtn.setBounds(927, 56, 28, 28);
+    // Top Right Controls (Preset Selector + Audition Trigger)
+    presetBox.setBounds(700, 56, 180, 28);
+    prevPresetBtn.setBounds(885, 56, 28, 28);
+    nextPresetBtn.setBounds(917, 56, 28, 28);
+
+    // Audition Trigger Button below Preset Box
+    triggerBtn.setBounds(700, 92, 245, 34);
 
     auto placeKnob = [this](const juce::String& id, int x, int y, int w, int h) {
         if (controls.find(id) != controls.end())
@@ -280,7 +312,7 @@ void ExtasisDonkerAudioProcessorEditor::resized()
         }
     };
 
-    // Section 1: FM Core (2 rows of 3)
+    // Section 1: FM Core
     placeKnob("fm_amount", 58, 258, 62, 88);
     placeKnob("fm_tune", 128, 258, 62, 88);
     placeKnob("fm_env", 198, 258, 62, 88);
