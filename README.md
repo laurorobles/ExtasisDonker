@@ -24,6 +24,8 @@
 
 ---
 
+[![Build Extasis Donker (Windows & macOS)](https://github.com/laurorobles/ExtasisDonker/actions/workflows/build.yml/badge.svg)](https://github.com/laurorobles/ExtasisDonker/actions/workflows/build.yml)
+
 ## ✨ Overview
 
 **Extasis Donker** is a precision-engineered virtual synthesizer designed exclusively for the creation and sculpting of the iconic **DONK** and **GUARACHA** bass sound (*LatelyBass*, *House Organ Bass*, *Guaracha Medallo Punch*, *Aleteo / Zapateo*, *Russian Hardbass*, *UK Bounce*, *Tech House Slap*).
@@ -32,7 +34,9 @@ Unlike generic 4/6-operator FM synths (which are notoriously tedious to program 
 
 ### 🌟 Key Highlights:
 - **TX81Z-Modeled DSP Engine**: Pure Sine (`W1`), Yamaha Half-Sine (`W5`), and Full-Wave Rectified (`W3`) with continuous morphing.
-- **Micro Pitch-Transient Click**: Ultra-fast exponential pitch sweeps (0–24 semitones in 5–20 ms) for instant laser/thud percussive impact.
+- **Pitch Drop (Laser) Envelope**: Ultra-fast exponential pitch sweeps (0–24 semitones) for instant laser/thud percussive impact.
+- **Auto Pump Sidechain**: Built-in, BPM-synced 1/4 note volume ducking effect to instantly achieve the Guaracha / Bounce groove.
+- **Resonant Squelch Filter**: State-Variable Lowpass filter capable of going down to 50Hz for pure sub isolation, paired with a squelechy resonance control.
 - **Pre-Master FX Suite**:
   - **`Erosion`**: 12-bit DAC quantization and 2.8 kHz noise ring-modulator for small-speaker presence.
   - **`Punch Slam`**: Transient compressor / OTT-style dynamic snap.

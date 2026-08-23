@@ -36,20 +36,21 @@ Ubicado en la parte superior derecha, debajo del selector de presets:
   - `2.00x`: El ratio clásico y estándar del Donk / LatelyBass.
   - `3.00x`: Timbre hueco y agresivo tipo UK Bounce.
   - `4.00x / 5.00x`: Timbre brillante y acampanado para Speed Garage.
-- **DONK TIME [CC 73]:** Duración de la caída exponencial de la modulación FM (20 ms a 350 ms). Valores cortos dan un "thud" percusivo seco; valores medios dan el "donk" clásico elástico.
+- **DONK TIME [CC 73]:** Duración de la caída exponencial de la modulación FM (5 ms a 500 ms). Valores cortos dan un "thud" percusivo seco; valores medios dan el "donk" clásico elástico.
 - **TX WAVE [CC 71]:** Morfología continua de la forma de onda del modulador:
   - `0% - 25%`: Onda Seno pura (`W1`).
   - `25% - 75%`: Media-onda **TX81Z Half-Sine (`W5`)** (el secreto acústico del LatelyBass).
   - `75% - 100%`: Onda rectificada completa / Saw-Sine (`W3`) para ataques acampanados.
-- **TIME SCALE [CC 12]:** Escala todas las envolventes simultáneamente (-100% a +100%) para ajustar la velocidad del bajo al BPM del proyecto.
+- **AUTO PUMP [CC 12]:** Control de Auto-Sidechain sincronizado al tempo del DAW (1/4 de nota). Hace que el sonido palpite creando el rebote (bounce) esencial de la Guaracha y Aleteo sin necesidad de usar plugins externos como LFO Tool.
 - **VEL SENS [CC 11]:** Sensibilidad dinámica de la velocidad MIDI. Permite que notas tocadas con más fuerza tengan más brillo FM y apertura de filtro.
 - **TX CRUNCH [CC 16]:** Cantidad de realimentación (*feedback loop*) del modulador y saturación analógica para añadir armónicos sucios de hardware de los 80s.
-- **CLICK / SNAP [CC 15]:** Profundidad de la micro-envolvente de pitch transient (0 a 24 semitonos en 12 ms) para simular el golpe percusivo tipo láser al inicio de cada nota.
+- **PITCH DROP [CC 15]:** Profundidad de la micro-envolvente de pitch transient (0 a +24 semitonos en 12 ms) para el sonido tipo láser / boing clásico del rebote UK Bounce.
 
 ---
 
 ### Sección 2: Transient & Tone
-- **LP FILTER [CC 74]:** Filtro Lowpass de estado variable con respuesta cálida analógica para recortar frecuencias agudas innecesarias.
+- **LP FILTER [CC 74]:** Filtro Lowpass de estado variable (desde 50 Hz hasta 20 kHz) para esculpir el tono.
+- **RESONANCE [CC 75]:** Añade armónicos agudos (squelch) en la frecuencia de corte del filtro, permitiendo sonidos de bajo ácidos y punzantes tipo sustractivo.
 - **GLIDE [CC 22]:** Tiempo de portamento monofónico legato para deslizar notas en líneas de bajo rápidas.
 
 ---
@@ -75,3 +76,14 @@ La pantalla LCD en verde y amarillo neón reproduce el aspecto de las pantallas 
 1. **Línea Superior:** Nombre del preset actual.
 2. **Línea Intermedia con Mouseover:** Al pasar el ratón por encima de cualquier perilla (incluso sin hacer clic), la pantalla muestra inmediatamente su nombre, su valor actual con unidades precisas y su código de MIDI CC.
 3. **Osciloscopio Vectorial en Tiempo Real:** Monitor de fósforo que dibuja la forma de onda exacta del bajo reaccionando dinámicamente a cada nota.
+
+
+---
+
+## 5. Activación de Licencia y Demo
+
+**ExtasisDonker** utiliza un sistema seguro de licencias criptográficas. 
+- Al abrir el plugin por primera vez en tu DAW, verás el botón rojo de **ACTIVATE**.
+- Tienes 10 minutos para probar las capacidades del sintetizador libremente.
+- Haz clic en **ACTIVATE** e introduce la clave oficial de 16 caracteres (`EXTD-XXXX-XXXX-XXXX-XXXX`) entregada en la compra oficial en Bandcamp.
+- Una vez activado con éxito, el mensaje en verde aparecerá, y **el modal de activación y el botón desaparecerán por completo** de la interfaz, dejando el plugin validado y limpio de forma permanente.
