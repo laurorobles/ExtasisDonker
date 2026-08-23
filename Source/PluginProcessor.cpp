@@ -5,6 +5,8 @@ ExtasisDonkerAudioProcessor::ExtasisDonkerAudioProcessor()
     : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
       apvts(*this, nullptr, "Parameters", createParameterLayout())
 {
+    // Ensure user presets directory exists
+    getPresetsDirectory().createDirectory();
 }
 
 ExtasisDonkerAudioProcessor::~ExtasisDonkerAudioProcessor()
@@ -108,7 +110,13 @@ bool ExtasisDonkerAudioProcessor::producesMidi() const { return false; }
 bool ExtasisDonkerAudioProcessor::isMidiEffect() const { return false; }
 double ExtasisDonkerAudioProcessor::getTailLengthSeconds() const { return 0.2; }
 
-juce::StringArray ExtasisDonkerAudioProcessor::getPresetNames()
+juce::File ExtasisDonkerAudioProcessor::getPresetsDirectory() const
+{
+    auto userMusic = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory);
+    return userMusic.getChildFile("Audio/Presets/Extasis Records/ExtasisDonker");
+}
+
+juce::StringArray ExtasisDonkerAudioProcessor::getFactoryPresetNames()
 {
     return {
         // Classic & 90s House
@@ -149,11 +157,31 @@ juce::StringArray ExtasisDonkerAudioProcessor::getPresetNames()
     };
 }
 
-int ExtasisDonkerAudioProcessor::getNumPrograms() { return getPresetNames().size(); }
+juce::StringArray ExtasisDonkerAudioProcessor::getAllPresetNames()
+{
+    juce::StringArray allPresets = getFactoryPresetNames();
+
+    auto dir = getPresetsDirectory();
+    if (dir.isDirectory())
+    {
+        juce::Array<juce::File> userFiles;
+        dir.findChildFiles(userFiles, juce::File::findFiles, false, "*.edpreset;*.xml");
+        userFiles.sort();
+
+        for (const auto& file : userFiles)
+        {
+            allPresets.add("[User] " + file.getFileNameWithoutExtension());
+        }
+    }
+
+    return allPresets;
+}
+
+int ExtasisDonkerAudioProcessor::getNumPrograms() { return getAllPresetNames().size(); }
 int ExtasisDonkerAudioProcessor::getCurrentProgram() { return currentProgramIndex; }
 const juce::String ExtasisDonkerAudioProcessor::getProgramName(int index)
 {
-    auto names = getPresetNames();
+    auto names = getAllPresetNames();
     if (juce::isPositiveAndBelow(index, names.size()))
         return names[index];
     return {};
@@ -167,6 +195,38 @@ void ExtasisDonkerAudioProcessor::setCurrentProgram(int index)
         currentProgramIndex = index;
         loadPreset(index);
     }
+}
+
+bool ExtasisDonkerAudioProcessor::saveUserPreset(const juce::String& presetName)
+{
+    if (presetName.trim().isEmpty())
+        return false;
+
+    auto dir = getPresetsDirectory();
+    dir.createDirectory();
+
+    auto cleanName = presetName.trim().replaceCharacters("/\\:?*\"<>|", "_________");
+    auto file = dir.getChildFile(cleanName + ".edpreset");
+
+    auto state = apvts.copyState();
+    state.setProperty("preset_name", cleanName, nullptr);
+
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    if (xml != nullptr)
+    {
+        return xml->writeTo(file);
+    }
+
+    return false;
+}
+
+bool ExtasisDonkerAudioProcessor::deleteUserPreset(const juce::String& presetName)
+{
+    auto dir = getPresetsDirectory();
+    auto file = dir.getChildFile(presetName + ".edpreset");
+    if (file.existsAsFile())
+        return file.deleteFile();
+    return false;
 }
 
 void ExtasisDonkerAudioProcessor::triggerAuditionNote(int noteNumber, float velocity)
@@ -187,6 +247,31 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
             param->setValueNotifyingHost(param->convertTo0to1(val));
     };
 
+    // User Preset Loading
+    if (presetIndex >= 30)
+    {
+        int userIndex = presetIndex - 30;
+        auto dir = getPresetsDirectory();
+        if (dir.isDirectory())
+        {
+            juce::Array<juce::File> userFiles;
+            dir.findChildFiles(userFiles, juce::File::findFiles, false, "*.edpreset;*.xml");
+            userFiles.sort();
+
+            if (juce::isPositiveAndBelow(userIndex, userFiles.size()))
+            {
+                auto file = userFiles[userIndex];
+                std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(file));
+                if (xml != nullptr && xml->hasTagName(apvts.state.getType()))
+                {
+                    apvts.replaceState(juce::ValueTree::fromXml(*xml));
+                    return;
+                }
+            }
+        }
+    }
+
+    // Factory Presets (0..29)
     switch (presetIndex)
     {
         // 1. Lately 1987 (TX81Z)
@@ -249,7 +334,7 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
             setP("glide_time", 5.0f);
             break;
 
-        // 7. Guaracha Medallo Punch (Iconic Colombian Aleteo FM Pluck)
+        // 7. Guaracha Medallo Punch
         case 6:
             setP("fm_amount", 96.0f); setP("fm_tune", 2.0f); setP("wave_position", 65.0f);
             setP("fm_env", 65.0f); setP("time_scale", -15.0f); setP("mod_amount", 130.0f);
@@ -259,7 +344,7 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
             setP("glide_time", 0.0f);
             break;
 
-        // 8. Aleteo Zapateo Knock (Super snappy percussive knock)
+        // 8. Aleteo Zapateo Knock
         case 7:
             setP("fm_amount", 100.0f); setP("fm_tune", 3.0f); setP("wave_position", 55.0f);
             setP("fm_env", 50.0f); setP("time_scale", -25.0f); setP("mod_amount", 140.0f);
@@ -479,7 +564,7 @@ void ExtasisDonkerAudioProcessor::loadPreset(int presetIndex)
             setP("glide_time", 0.0f);
             break;
 
-        // 30. Extasis Anthem Donk (Ultimate Signature Master Patch)
+        // 30. Extasis Anthem Donk
         case 29:
             setP("fm_amount", 96.0f); setP("fm_tune", 2.0f); setP("wave_position", 55.0f);
             setP("fm_env", 80.0f); setP("time_scale", -5.0f); setP("mod_amount", 135.0f);

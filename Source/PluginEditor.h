@@ -24,6 +24,8 @@ public:
     void mouseEnter(const juce::MouseEvent& e) override;
     void mouseExit(const juce::MouseEvent& e) override;
 
+    void refreshPresetList();
+
 private:
     ExtasisDonkerAudioProcessor& processorRef;
     ExtasisGUI::TX81ZLookAndFeel customLookAndFeel;
@@ -31,10 +33,11 @@ private:
     // Display
     ExtasisGUI::TX81ZDisplay display;
 
-    // Preset selection
+    // Preset selection & Save
     juce::ComboBox presetBox;
     juce::TextButton prevPresetBtn { "<" };
     juce::TextButton nextPresetBtn { ">" };
+    juce::TextButton savePresetBtn { "SAVE" };
 
     // Audition Trigger Button (Large Logo Pad, Drag for +/-12st)
     ExtasisGUI::DonkTriggerButton triggerBtn;

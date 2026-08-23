@@ -11,16 +11,13 @@ public:
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
-
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
     const juce::String getName() const override;
-
     bool acceptsMidi() const override;
     bool producesMidi() const override;
     bool isMidiEffect() const override;
@@ -32,32 +29,32 @@ public:
     const juce::String getProgramName(int index) override;
     void changeProgramName(int index, const juce::String& newName) override;
 
+    static juce::StringArray getFactoryPresetNames();
+    juce::StringArray getAllPresetNames();
+    void loadPreset(int presetIndex);
+    bool saveUserPreset(const juce::String& presetName);
+    bool deleteUserPreset(const juce::String& presetName);
+    juce::File getPresetsDirectory() const;
+
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState& getAPVTS() { return apvts; }
-    
-    // Preset definitions
-    void loadPreset(int presetIndex);
-    static juce::StringArray getPresetNames();
+    ExtasisDSP::DonkSynth& getSynth() { return synth; }
 
-    // Direct Audition Trigger from UI
-    void triggerAuditionNote(int noteNumber, float velocity);
-    void releaseAuditionNote(int noteNumber);
+    void triggerAuditionNote(int noteNumber = 36, float velocity = 1.0f);
+    void releaseAuditionNote(int noteNumber = 36);
 
-    // FIFO Scope listener for Editor
-    std::function<void(const float*, int)> onAudioBlockProcessed;
-    // Callback when MIDI CC changes a param to notify UI
+    std::function<void(const float* samples, int numSamples)> onAudioBlockProcessed;
     std::function<void(int ccNumber, float value)> onMidiCCReceived;
 
 private:
     juce::AudioProcessorValueTreeState apvts;
     ExtasisDSP::DonkSynth synth;
-
     int currentProgramIndex = 0;
 
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     void handleMidiCC(int ccNumber, int ccValue);
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ExtasisDonkerAudioProcessor)
 };

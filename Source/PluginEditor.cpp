@@ -17,12 +17,8 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
         });
     };
 
-    // 2. Preset Selector
-    auto presetNames = ExtasisDonkerAudioProcessor::getPresetNames();
-    for (int i = 0; i < presetNames.size(); ++i)
-    {
-        presetBox.addItem(presetNames[i], i + 1);
-    }
+    // 2. Preset Selector & Navigation
+    refreshPresetList();
     presetBox.setSelectedId(processorRef.getCurrentProgram() + 1, juce::dontSendNotification);
     presetBox.addListener(this);
     addAndMakeVisible(presetBox);
@@ -40,6 +36,41 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
         presetBox.setSelectedId(next + 1, juce::sendNotification);
     };
     addAndMakeVisible(nextPresetBtn);
+
+    // Save Preset Button
+    savePresetBtn.onClick = [this]() {
+        auto* aw = new juce::AlertWindow("SAVE PRESET", "Enter a name for your custom preset:", juce::AlertWindow::QuestionIcon);
+        aw->setLookAndFeel(&customLookAndFeel);
+        aw->addTextEditor("name", "Custom Donk", "Preset Name:");
+        aw->addButton("SAVE", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        aw->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+        aw->enterModalState(true, juce::ModalCallbackFunction::create([this, aw](int result) {
+            if (result == 1)
+            {
+                auto name = aw->getTextEditorContents("name").trim();
+                if (name.isNotEmpty())
+                {
+                    if (processorRef.saveUserPreset(name))
+                    {
+                        refreshPresetList();
+                        auto names = processorRef.getAllPresetNames();
+                        for (int i = 0; i < names.size(); ++i)
+                        {
+                            if (names[i].contains(name))
+                            {
+                                presetBox.setSelectedId(i + 1, juce::sendNotification);
+                                break;
+                            }
+                        }
+                        display.setParameterReadout("PRESET SAVED", name.toUpperCase());
+                    }
+                }
+            }
+            delete aw;
+        }));
+    };
+    addAndMakeVisible(savePresetBtn);
 
     // 3. Audition Trigger Button (Large Centered Logo Pad)
     triggerBtn.onNoteOn = [this](int midiNote, float velocity) {
@@ -103,6 +134,19 @@ ExtasisDonkerAudioProcessorEditor::~ExtasisDonkerAudioProcessorEditor()
     setLookAndFeel(nullptr);
     processorRef.onAudioBlockProcessed = nullptr;
     processorRef.onMidiCCReceived = nullptr;
+}
+
+void ExtasisDonkerAudioProcessorEditor::refreshPresetList()
+{
+    int currentId = presetBox.getSelectedId();
+    presetBox.clear(juce::dontSendNotification);
+    auto presetNames = processorRef.getAllPresetNames();
+    for (int i = 0; i < presetNames.size(); ++i)
+    {
+        presetBox.addItem(presetNames[i], i + 1);
+    }
+    if (currentId > 0 && currentId <= presetNames.size())
+        presetBox.setSelectedId(currentId, juce::dontSendNotification);
 }
 
 juce::String ExtasisDonkerAudioProcessorEditor::getFormattedValueText(const juce::String& paramId, double val)
@@ -365,10 +409,11 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     // Top Right Bandcamp Link in Header Bar
     bandcampLinkBtn.setBounds(getWidth() - 265, 7, 215, 22);
 
-    // Preset Selector
-    presetBox.setBounds(700, 48, 175, 28);
-    prevPresetBtn.setBounds(880, 48, 28, 28);
-    nextPresetBtn.setBounds(912, 48, 28, 28);
+    // Preset Selector, Navigation & Save Buttons
+    presetBox.setBounds(700, 48, 140, 28);
+    prevPresetBtn.setBounds(844, 48, 25, 28);
+    nextPresetBtn.setBounds(871, 48, 25, 28);
+    savePresetBtn.setBounds(898, 48, 42, 28);
 
     // Large Centered Logo Audition Trigger Pad right below Presets
     triggerBtn.setBounds(700, 84, 240, 134);
