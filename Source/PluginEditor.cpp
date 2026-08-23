@@ -143,19 +143,20 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     // 6. Create all Knobs with Live Value Labels & MouseListeners
     createKnob("fm_amount", "DONK PUNCH");
     createKnob("fm_tune", "FM RATIO");
-    createKnob("fm_env", "DONK TIME");
     createKnob("wave_position", "TX WAVE");
-    createKnob("time_scale", "TIME SCALE");
     createKnob("mod_amount", "VEL SENS");
-
-    createKnob("transient_click", "CLICK / SNAP");
+    createKnob("fm_env", "DONK TIME");
+    createKnob("pump_amount", "AUTO PUMP");
     createKnob("tx_crunch", "TX CRUNCH");
-    createKnob("glide_time", "GLIDE");
+    createKnob("pitch_drop", "PITCH DROP");
+    
     createKnob("filter_cutoff", "LP FILTER");
-
+    createKnob("filter_reso", "RESONANCE");
+    createKnob("glide_time", "GLIDE");
+    
     createKnob("erosion_grit", "EROSION");
     createKnob("punch_slam", "PUNCH SLAM");
-
+    
     createKnob("sub_gain", "SUB GAIN");
     createKnob("sub_tone", "SUB TONE");
     createKnob("reverb_space", "TOP SPREAD");
