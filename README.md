@@ -14,6 +14,10 @@
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-lightgrey.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/Format-VST3%20%7C%20AU%20%7C%20Standalone-orange.svg" alt="Format" />
   <img src="https://img.shields.io/badge/License-Commercial%20%2F%20Open%20Source-green.svg" alt="License" />
+
+<p align="center">
+  <img src="assets/screenshot.png" alt="Extasis Donker Interface" width="900" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);" />
+</p>
 </p>
 
 ---
