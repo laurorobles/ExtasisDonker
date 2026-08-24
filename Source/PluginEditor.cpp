@@ -505,8 +505,9 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     softClipBtn.setBounds(440, 318, 50, 26);
 
     // Section 4: Sub & Space (2x2 grid, x=504, w=148, ends=652)
-    placeKnob("sub_gain",    510, 204, knobW, knobH);
-    placeKnob("sub_tone",    572, 204, knobW, knobH);
-    placeKnob("reverb_space",510, 298, knobW, knobH);
-    placeKnob("master_vol",  572, 298, knobW, knobH);
+    // Centered symmetrically: gaps of 16px (504+16=520, 520+50+16=586, 586+50+16=652)
+    placeKnob("sub_gain",    520, 204, knobW, knobH);
+    placeKnob("sub_tone",    586, 204, knobW, knobH);
+    placeKnob("reverb_space",520, 298, knobW, knobH);
+    placeKnob("master_vol",  586, 298, knobW, knobH);
 }
