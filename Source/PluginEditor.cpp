@@ -457,7 +457,7 @@ void ExtasisDonkerAudioProcessorEditor::resized()
 
     // Top Right Header Button (License Activation)
     // Align ACTIVATE button strictly to right margin (652) -> 652 - 70 = 582
-    licenseBadgeButton.setBounds(582, 22, 70, 16); 
+    licenseBadgeButton.setBounds(582, 20, 70, 16); 
 
     // Preset Selector, Navigation & Save Buttons
     // Total available width: 652 - 480 = 172. 

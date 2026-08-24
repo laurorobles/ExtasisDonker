@@ -54,6 +54,18 @@ Unlike generic 4/6-operator FM synths (which are notoriously tedious to program 
 
 ---
 
+
+## 🔄 Recent Updates (August 2026)
+
+- **UI Redesign**: Fully compacted `700x400` layout featuring symmetrical rack margins.
+- **DSP Refinements**: 
+  - Precision anti-click algorithm completely eliminates unwanted pops on fast note retriggers and voice stealing.
+  - Amp envelope attack curvature smoothed for tighter transients without artifacts.
+- **Factory Presets**: Renamed and refined 30 built-in factory patches to be more discrete, elegant, and directly inspired by genre classics (e.g. *Blackout*, *Bamboo*, *Wigan*, *Kolbaser*, *Medallo*, *Speed Rip*).
+- **Header Geometry**: Millimeter-perfect button realignment for the Activate, Save, and navigation controls to respect right-side rack ear boundaries seamlessly.
+
+---
+
 ## 📖 Official Documentation & Manual
 
 For full technical specifications, preset sound design breakdowns, and parameter reference, see the **[Official User Manual (MANUAL.md)](MANUAL.md)** and **[Technical Architecture (TECHNICAL.md)](TECHNICAL.md)**.
