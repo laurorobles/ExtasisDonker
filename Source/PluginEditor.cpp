@@ -456,16 +456,21 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     display.setBounds(48, 42, 420, 130);
 
     // Top Right Header Button (License Activation)
-    licenseBadgeButton.setBounds(getWidth() - 90, 22, 70, 16); 
+    // Align ACTIVATE button strictly to right margin (652) -> 652 - 70 = 582
+    licenseBadgeButton.setBounds(582, 22, 70, 16); 
 
     // Preset Selector, Navigation & Save Buttons
-    presetBox.setBounds(480, 42, 114, 26);
-    prevPresetBtn.setBounds(598, 42, 22, 26);
-    nextPresetBtn.setBounds(622, 42, 22, 26);
-    savePresetBtn.setBounds(646, 42, 28, 26);
+    // Total available width: 652 - 480 = 172. 
+    // Button widths: save=24, next=22, prev=22 (sum=68).
+    // Remaining for presetBox = 172 - 68 - 6 (spacing) = 98.
+    presetBox.setBounds(480, 42, 98, 26);
+    prevPresetBtn.setBounds(580, 42, 22, 26);
+    nextPresetBtn.setBounds(604, 42, 22, 26);
+    savePresetBtn.setBounds(628, 42, 24, 26);
 
     // Large Centered Logo Audition Trigger Pad right below Presets
-    triggerBtn.setBounds(480, 74, 194, 98);
+    // Max width 172, so it ends exactly at 480 + 172 = 652
+    triggerBtn.setBounds(480, 74, 172, 98);
 
     auto placeKnob = [this](const juce::String& id, int x, int y, int w, int h) {
         if (controls.find(id) != controls.end())
