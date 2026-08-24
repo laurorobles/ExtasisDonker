@@ -90,10 +90,18 @@ public:
         if (!isLegato || activeMidiNote < 0)
         {
             currentFreq = targetFreq;
+            
+            // ANTI-CLICK: If the voice is already sounding loudly, DO NOT reset the phase 
+            // to avoid a discontinuous jump (pop). If it's silent, reset phase for max punch.
+            if (ampEnvelope.getCurrentLevel() < 0.05f)
+            {
+                oscillator.reset();
+                ampEnvelope.forceZero();
+            }
+            
             ampEnvelope.noteOn();
             fmEnvelope.noteOn();
             pitchTransient.trigger(pitchDropAmount * 24.0f, 12.0f); // up to 24 semitones snap
-            oscillator.reset();
         }
         else
         {
@@ -146,9 +154,9 @@ public:
 
         // Update envelope parameters (timeScale fixed to 1.0)
         // Modulator (FM) Envelope: Very short decay, 0 sustain, short release for the 'click'
-        fmEnvelope.setParameters(1.0f, fmEnvDecayMs, 0.0f, 20.0f, 1.0f);
+        fmEnvelope.setParameters(1.5f, fmEnvDecayMs, 0.0f, 20.0f, 1.0f);
         // Carrier (Amp) Envelope: Medium-short decay, 0 sustain, short release for true Donk bounce
-        ampEnvelope.setParameters(1.0f, 900.0f, 0.0f, 30.0f, 1.0f);
+        ampEnvelope.setParameters(2.5f, 900.0f, 0.0f, 30.0f, 1.0f);
 
         // Filter cutoff & resonance
         float velCutoffScale = 1.0f + (currentVelocity - 0.5f) * modSens * 0.6f;

@@ -31,6 +31,8 @@ public:
         state = State::Idle;
     }
 
+    void forceZero() { currentLevel = 0.0f; }
+
     void noteOn()
     {
         state = State::Attack;
