@@ -30,7 +30,7 @@ public:
     void refreshPresetList();
 
 private:
-    juce::HyperlinkButton gumroadLinkBtn { "BUY LICENSE", juce::URL("http://laurorobles.gumroad.com") };
+    
 
     bool isActivated = false;
     bool showActivationModal = false;
@@ -56,8 +56,6 @@ private:
     juce::TextButton softClipBtn { "SOFT CLIP" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> softClipAttachment;
 
-    // Top Right Bandcamp Link Button
-    juce::HyperlinkButton bandcampLinkBtn { "extasisrecords.bandcamp.com", juce::URL("http://laurorobles.gumroad.com") };
 
     // Sliders & Labels
     struct KnobControl

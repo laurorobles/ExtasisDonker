@@ -13,6 +13,7 @@ public:
     juce::TextButton activateButton;
     juce::TextButton demoButton;
     juce::Label statusLabel;
+    juce::HyperlinkButton gumroadLinkBtn { "BUY LICENSE", juce::URL ("http://laurorobles.gumroad.com") };
 
     ActivationOverlayComponent()
     {
@@ -43,6 +44,8 @@ public:
         };
 
         addAndMakeVisible (statusLabel);
+        addAndMakeVisible (gumroadLinkBtn);
+        gumroadLinkBtn.setColour (juce::HyperlinkButton::textColourId, juce::Colours::yellow);
         statusLabel.setFont (juce::FontOptions (11.5f, juce::Font::bold));
         statusLabel.setJustificationType (juce::Justification::centred);
     }
@@ -89,8 +92,7 @@ public:
 
         g.setFont (juce::FontOptions (9.5f, juce::Font::plain));
         g.setColour (juce::Colour (0xff718093));
-        g.drawText ("laurorobles.gumroad.com",
-                    modalX + 20, modalY + modalH - 24, modalW - 40, 16, juce::Justification::centred);
+        
     }
 
     void resized() override
@@ -113,5 +115,6 @@ public:
             demoButton.setVisible (true);
         }
         statusLabel.setBounds (modalX + 30, modalY + 172, modalW - 60, 24);
+        gumroadLinkBtn.setBounds (modalX + (modalW - 120) / 2, modalY + modalH - 28, 120, 20);
     }
 };

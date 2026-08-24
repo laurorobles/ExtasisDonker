@@ -3,8 +3,8 @@
 ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonkerAudioProcessor& p)
     : AudioProcessorEditor(&p), processorRef(p)
 {
-    addAndMakeVisible(gumroadLinkBtn);
-    gumroadLinkBtn.setColour(juce::HyperlinkButton::textColourId, juce::Colours::yellow);
+    
+    
 
     isActivated = LicenseManager::isLicensed();
 
@@ -137,11 +137,6 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     softClipAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processorRef.getAPVTS(), "soft_clip", softClipBtn);
     addAndMakeVisible(softClipBtn);
-
-    // 5. Bandcamp Link at far right of name bar
-    bandcampLinkBtn.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold), false, juce::Justification::centredRight);
-    bandcampLinkBtn.setColour(juce::HyperlinkButton::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent().withAlpha(0.95f));
-    addAndMakeVisible(bandcampLinkBtn);
 
     // 6. Create all Knobs with Live Value Labels & MouseListeners
     createKnob("fm_amount", "DONK PUNCH");
@@ -442,16 +437,16 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
         g.drawHorizontalLine((int)r.getY() + 20, r.getX() + 8.0f, r.getRight() - 8.0f);
     };
 
-    // 4 Ultra-Condensed Sections flush at Y=184, Height=206
-    drawSectionBox(juce::Rectangle<float>(48, 184, 252, 206), "1. FM SYNTHESIS CORE");
-    drawSectionBox(juce::Rectangle<float>(308, 184, 72, 206), "2. FILTER");
-    drawSectionBox(juce::Rectangle<float>(388, 184, 136, 206), "3. TONE & FX");
-    drawSectionBox(juce::Rectangle<float>(532, 184, 136, 206), "4. SUB & SPACE");
+    // 4 Sections - symmetric margins (left ear at 38px, content at 48px, right content ends at 652)
+    drawSectionBox(juce::Rectangle<float>(48, 184, 248, 206), "1. FM SYNTHESIS CORE");
+    drawSectionBox(juce::Rectangle<float>(302, 184, 64, 206), "2. FILTER");
+    drawSectionBox(juce::Rectangle<float>(372, 184, 126, 206), "3. TONE & FX");
+    drawSectionBox(juce::Rectangle<float>(504, 184, 148, 206), "4. SUB & SPACE");
 }
 
 void ExtasisDonkerAudioProcessorEditor::resized()
 {
-    gumroadLinkBtn.setBounds(getWidth() - 110, 10, 100, 24);
+    
 
     // Global App Bounds
     auto bounds = getLocalBounds();
@@ -460,8 +455,7 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     // Display in the center top
     display.setBounds(48, 42, 420, 130);
 
-    // Top Right Header Buttons (Activate Below Bandcamp)
-    bandcampLinkBtn.setBounds(getWidth() - 176, 5, 160, 16); 
+    // Top Right Header Button (License Activation)
     licenseBadgeButton.setBounds(getWidth() - 90, 22, 70, 16); 
 
     // Preset Selector, Navigation & Save Buttons
@@ -489,31 +483,30 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     int knobW = 50;
     int knobH = 74;
 
-    // Section 1: FM Core (4x2 grid, X=48, w=252)
-    placeKnob("fm_amount", 58, 204, knobW, knobH);
-    placeKnob("fm_tune", 120, 204, knobW, knobH);
-    placeKnob("wave_position", 182, 204, knobW, knobH);
-    placeKnob("mod_amount", 244, 204, knobW, knobH);
+    // Section 1: FM Core (4x2 grid, x=48, w=248, ends=296)
+    placeKnob("fm_amount",    52, 204, knobW, knobH);
+    placeKnob("fm_tune",     114, 204, knobW, knobH);
+    placeKnob("wave_position",176, 204, knobW, knobH);
+    placeKnob("mod_amount",  238, 204, knobW, knobH);
 
-    placeKnob("fm_env", 58, 298, knobW, knobH);
-    placeKnob("pump_amount", 120, 298, knobW, knobH);
-    placeKnob("tx_crunch", 182, 298, knobW, knobH);
-    placeKnob("pitch_drop", 244, 298, knobW, knobH);
+    placeKnob("fm_env",       52, 298, knobW, knobH);
+    placeKnob("pump_amount", 114, 298, knobW, knobH);
+    placeKnob("tx_crunch",   176, 298, knobW, knobH);
+    placeKnob("pitch_drop",  238, 298, knobW, knobH);
 
-    // Section 2: Filter (1x2 grid, X=308, w=72)
-    placeKnob("filter_cutoff", 319, 204, knobW, knobH);
-    placeKnob("filter_reso", 319, 298, knobW, knobH);
+    // Section 2: Filter (1x2 grid, x=302, w=64 — single knob centered)
+    placeKnob("filter_cutoff", 309, 204, knobW, knobH);
+    placeKnob("filter_reso",   309, 298, knobW, knobH);
 
-    // Section 3: Tone & FX (2x2 grid, X=388, w=136)
-    placeKnob("glide_time", 397, 204, knobW, knobH);
-    placeKnob("erosion_grit", 463, 204, knobW, knobH);
-    placeKnob("punch_slam", 397, 298, knobW, knobH);
-    // Smaller Soft Clip button
-    softClipBtn.setBounds(463, 318, 50, 28);
+    // Section 3: Tone & FX (2x2 grid, x=372, w=126, ends=498)
+    placeKnob("glide_time",   378, 204, knobW, knobH);
+    placeKnob("erosion_grit", 440, 204, knobW, knobH);
+    placeKnob("punch_slam",   378, 298, knobW, knobH);
+    softClipBtn.setBounds(440, 318, 50, 26);
 
-    // Section 4: Sub & Space (2x2 grid, X=532, w=136)
-    placeKnob("sub_gain", 541, 204, knobW, knobH);
-    placeKnob("sub_tone", 607, 204, knobW, knobH);
-    placeKnob("reverb_space", 541, 298, knobW, knobH);
-    placeKnob("master_vol", 607, 298, knobW, knobH);
+    // Section 4: Sub & Space (2x2 grid, x=504, w=148, ends=652)
+    placeKnob("sub_gain",    510, 204, knobW, knobH);
+    placeKnob("sub_tone",    572, 204, knobW, knobH);
+    placeKnob("reverb_space",510, 298, knobW, knobH);
+    placeKnob("master_vol",  572, 298, knobW, knobH);
 }
