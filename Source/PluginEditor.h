@@ -5,6 +5,7 @@
 #include "GUI/TX81ZDisplay.h"
 #include "GUI/DonkTriggerButton.h"
 #include "GUI/ActivationOverlay.h"
+#include "GUI/SavePresetOverlay.h"
 #include "LicenseManager.h"
 
 
@@ -36,6 +37,8 @@ private:
     bool showActivationModal = false;
     juce::TextButton licenseBadgeButton;
     ActivationOverlayComponent activationOverlay;
+    SavePresetOverlay savePresetOverlay;
+    bool showSaveModal = false;
 
     ExtasisDonkerAudioProcessor& processorRef;
     ExtasisGUI::TX81ZLookAndFeel customLookAndFeel;

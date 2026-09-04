@@ -170,6 +170,9 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     display.setPatchName(presetBox.getText());
 
     setSize(700, 400);
+    setResizable(true, true);
+    setResizeLimits(350, 200, 1400, 800);
+    getConstrainer()->setFixedAspectRatio(700.0 / 400.0);
 }
 
 ExtasisDonkerAudioProcessorEditor::~ExtasisDonkerAudioProcessorEditor()
@@ -359,7 +362,8 @@ void ExtasisDonkerAudioProcessorEditor::updateParamDisplayForSlider(juce::Slider
 
 void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
+    auto bounds = juce::Rectangle<float>(0, 0, 700, 400);
+    g.addTransform(juce::AffineTransform::scale((float)getWidth() / 700.0f, (float)getHeight() / 400.0f));
 
     // 1. Chassis: Dark Brushed Metal Rack
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getChassisColor());
@@ -407,10 +411,10 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
     g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE", 215, 9, 360, 18, juce::Justification::left);
 
-    // coded by @laurorobles in tiny font right below the title
-    g.setColour(juce::Colour(0xff707a8a));
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold));
-    g.drawText("coded by @laurorobles", 52, 27, 220, 12, juce::Justification::left);
+    // Discreet Credit
+    g.setColour(juce::Colour(0xff2d333a)); // Very dark, blends in
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 7.5f, juce::Font::plain));
+    g.drawText("coded by @laurorobles", bounds.getWidth() - 110, bounds.getBottom() - 15, 100, 10, juce::Justification::right);
 
     // Right Decal: |||||||| TX-CORE DSP
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -422,11 +426,11 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillRect(48, 40, getWidth() - 96, 2);
 
     // 4. Section Framing & Panels (Condensed Height: 218px)
-    auto drawSectionBox = [&g](juce::Rectangle<float> r, const juce::String& title) {
-        g.setColour(juce::Colour(0xff1b1e22));
+    auto drawSectionBox = [&g](juce::Rectangle<float> r, const juce::String& title, bool isCore = false) {
+        g.setColour(isCore ? juce::Colour(0xff14171a) : juce::Colour(0xff181a1e));
         g.fillRoundedRectangle(r, 4.0f);
-        g.setColour(juce::Colour(0xff333842));
-        g.drawRoundedRectangle(r, 4.0f, 1.0f);
+        g.setColour(isCore ? juce::Colour(0x4000d2ff) : juce::Colour(0xff2d3138));
+        g.drawRoundedRectangle(r, 4.0f, 1.5f);
 
         // Section Title Header
         g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
@@ -438,7 +442,7 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     };
 
     // 4 Sections - symmetric margins (left ear at 38px, content at 48px, right content ends at 652)
-    drawSectionBox(juce::Rectangle<float>(48, 184, 248, 206), "1. FM SYNTHESIS CORE");
+    drawSectionBox(juce::Rectangle<float>(48, 184, 248, 206), "1. FM SYNTHESIS CORE", true);
     drawSectionBox(juce::Rectangle<float>(302, 184, 64, 206), "2. FILTER");
     drawSectionBox(juce::Rectangle<float>(372, 184, 126, 206), "3. TONE & FX");
     drawSectionBox(juce::Rectangle<float>(504, 184, 148, 206), "4. SUB & SPACE");
@@ -446,40 +450,41 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
 void ExtasisDonkerAudioProcessorEditor::resized()
 {
-    
+    float scale = (float)getWidth() / 700.0f;
 
     // Global App Bounds
     auto bounds = getLocalBounds();
-    activationOverlay.setBounds (bounds);
+    activationOverlay.setBounds(bounds);
+    savePresetOverlay.setBounds(bounds);
     
     // Display in the center top
-    display.setBounds(48, 42, 420, 130);
+    display.setBounds(48 * scale, 42 * scale, 420 * scale, 130 * scale);
 
     // Top Right Header Button (License Activation)
     // Align ACTIVATE button strictly to right margin (652) -> 652 - 70 = 582
-    licenseBadgeButton.setBounds(582, 20, 70, 16); 
+    licenseBadgeButton.setBounds(582 * scale, 20 * scale, 70 * scale, 16 * scale);
 
     // Preset Selector, Navigation & Save Buttons
     // Total available width: 652 - 480 = 172. 
     // Button widths: save=24, next=22, prev=22 (sum=68).
     // Remaining for presetBox = 172 - 68 - 6 (spacing) = 98.
-    presetBox.setBounds(480, 42, 98, 26);
-    prevPresetBtn.setBounds(580, 42, 22, 26);
-    nextPresetBtn.setBounds(604, 42, 22, 26);
-    savePresetBtn.setBounds(628, 42, 24, 26);
+    presetBox.setBounds(480 * scale, 42 * scale, 98 * scale, 26 * scale);
+    prevPresetBtn.setBounds(580 * scale, 42 * scale, 22 * scale, 26 * scale);
+    nextPresetBtn.setBounds(604 * scale, 42 * scale, 22 * scale, 26 * scale);
+    savePresetBtn.setBounds(628 * scale, 42 * scale, 24 * scale, 26 * scale);
 
     // Large Centered Logo Audition Trigger Pad right below Presets
     // Max width 172, so it ends exactly at 480 + 172 = 652
-    triggerBtn.setBounds(480, 74, 172, 98);
+    triggerBtn.setBounds(480 * scale, 74 * scale, 172 * scale, 98 * scale);
 
-    auto placeKnob = [this](const juce::String& id, int x, int y, int w, int h) {
+    auto placeKnob = [this, scale](const juce::String& id, int x, int y, int w, int h) {
         if (controls.find(id) != controls.end())
         {
             // Smaller knob slider
-            controls[id].slider->setBounds(x, y, w, h - 24);
+            controls[id].slider->setBounds(x * scale, y * scale, w * scale, (h - 24) * scale);
             // Smaller labels that stretch slightly wider to fit text
-            controls[id].label->setBounds(x - 10, y + h - 24, w + 20, 12);
-            controls[id].valueLabel->setBounds(x - 10, y + h - 12, w + 20, 12);
+            controls[id].label->setBounds((x - 10) * scale, (y + h - 24) * scale, (w + 20) * scale, 12 * scale);
+            controls[id].valueLabel->setBounds((x - 10) * scale, (y + h - 12) * scale, (w + 20) * scale, 12 * scale);
             controls[id].label->setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold));
             controls[id].valueLabel->setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::plain));
         }

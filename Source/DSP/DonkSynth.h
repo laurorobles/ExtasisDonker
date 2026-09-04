@@ -73,6 +73,17 @@ public:
                 triggerNote(prevNote, currentVelocity, true);
             }
         }
+        else if (msg.isPitchWheel())
+        {
+            // Pitch bend: -2 to +2 semitones
+            int bend = msg.getPitchWheelValue() - 8192;
+            pitchBendSemitones = (float)bend / 8192.0f * 2.0f;
+        }
+        else if (msg.isController() && msg.getControllerNumber() == 1)
+        {
+            // Mod wheel
+            modWheelValue = (float)msg.getControllerValue() / 127.0f;
+        }
         else if (msg.isAllNotesOff() || msg.isAllSoundOff())
         {
             heldNotes.clear();
@@ -159,8 +170,10 @@ public:
         ampEnvelope.setParameters(2.5f, 900.0f, 0.0f, 30.0f, 1.0f);
 
         // Filter cutoff & resonance
+        // Mod wheel opens filter further
         float velCutoffScale = 1.0f + (currentVelocity - 0.5f) * modSens * 0.6f;
-        float actualCutoff = juce::jlimit(20.0f, 20000.0f, filterCutoffHz * velCutoffScale);
+        float modWheelCutoffScale = 1.0f + (modWheelValue * 2.0f); // up to +200% cutoff via mod wheel
+        float actualCutoff = juce::jlimit(20.0f, 20000.0f, filterCutoffHz * velCutoffScale * modWheelCutoffScale);
         filter.setCutoffFrequency(actualCutoff);
         // Map 0-1 resonance to 0.707 (min) - 5.0 (max) for a squelechy ladder behavior
         filter.setResonance(juce::jmap(filterResoAmount, 0.707f, 5.0f));
@@ -195,9 +208,10 @@ public:
                 currentFreq = targetFreq;
             }
 
-            // Pitch transient modulation (click)
+            // Pitch transient modulation (click) and global pitch bend
             float pitchSnapSemitones = pitchTransient.getNextSemitoneOffset();
-            float snappedFreq = currentFreq * std::pow(2.0f, pitchSnapSemitones / 12.0f);
+            float totalPitchOffset = pitchSnapSemitones + pitchBendSemitones;
+            float snappedFreq = currentFreq * std::pow(2.0f, totalPitchOffset / 12.0f);
 
             // Envelope values
             float fmEnvVal = fmEnvelope.getNextSample();
@@ -256,6 +270,8 @@ private:
     float targetFreq = 0.0f;
     float glideCoeff = 0.0f;
     float currentVelocity = 1.0f;
+    float pitchBendSemitones = 0.0f;
+    float modWheelValue = 0.0f;
     float pitchDropAmount = 0.5f;
     int activeMidiNote = -1;
     juce::Array<int> heldNotes;
