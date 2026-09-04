@@ -5,22 +5,16 @@
 </p>
 
 <p align="center">
-  <strong>Dedicated FM Donk & Guaracha Bass Synthesizer Plugin Workstation</strong><br>
-  <em>Inspired by the legendary Yamaha TX81Z (1987), 90s House & Latin Club Culture. Built with JUCE (C++17) for macOS & Windows.</em>
+  <strong>The Ultimate FM Donk & Guaracha Bass Synthesizer Workstation</strong><br>
+  <em>Inspired by the legendary Yamaha TX81Z (1987), 90s House, and Global Club Culture. Built with JUCE (C++17) for macOS & Windows.</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue.svg" alt="Version 1.0" />
+  <img src="https://img.shields.io/badge/Version-1.1.0-blue.svg" alt="Version 1.1" />
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-lightgrey.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/Format-VST3%20%7C%20AU%20%7C%20Standalone-orange.svg" alt="Format" />
-  <img src="https://img.shields.io/badge/License-Commercial%20%2F%20Open%20Source-green.svg" alt="License" />
-
-<p align="center">
-  <img src="assets/screenshot.png" alt="Extasis Donker Interface" width="900" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);" />
+  <img src="https://img.shields.io/badge/License-Commercial-green.svg" alt="License" />
 </p>
-</p>
-
----
 
 <p align="center">
   <img src="docs/extasis_donker_ui.jpg" alt="Extasis Donker Interface" width="900" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);" />
@@ -30,53 +24,70 @@
 
 [![Build Extasis Donker (Windows & macOS)](https://github.com/laurorobles/ExtasisDonker/actions/workflows/build.yml/badge.svg)](https://github.com/laurorobles/ExtasisDonker/actions/workflows/build.yml)
 
-## ✨ Overview
+## ✨ Introduction & Philosophy
 
-**Extasis Donker** is a precision-engineered virtual synthesizer designed exclusively for the creation and sculpting of the iconic **DONK** and **GUARACHA** bass sound (*LatelyBass*, *House Organ Bass*, *Guaracha Medallo Punch*, *Aleteo / Zapateo*, *Russian Hardbass*, *UK Bounce*, *Tech House Slap*).
+**Extasis Donker** is a precision-engineered virtual instrument designed exclusively for one purpose: synthesizing the hardest-hitting, club-ready **DONK** and **GUARACHA** basslines. From the iconic *LatelyBass* of the late 80s and the *House Organ Basses* of the 90s, to modern *Guaracha Medallo Punch*, *Aleteo*, *Russian Hardbass*, *UK Bounce*, and *Tech House Slaps* — this plugin is the definitive toolkit for percussive electronic bass.
 
-Unlike generic 4/6-operator FM synths (which are notoriously tedious to program and easy to make sound dissonant), **Extasis Donker locks every parameter inside its mathematically calibrated "Sweet Spot"**. Every knob turn guarantees a punchy, snappy, club-ready bass that sits perfectly in the mix.
-
-### 🌟 Key Highlights:
-- **TX81Z-Modeled DSP Engine**: Pure Sine (`W1`), Yamaha Half-Sine (`W5`), and Full-Wave Rectified (`W3`) with continuous morphing.
-- **Pitch Drop (Laser) Envelope**: Ultra-fast exponential pitch sweeps (0–24 semitones) for instant laser/thud percussive impact.
-- **Auto Pump Sidechain**: Built-in, BPM-synced 1/4 note volume ducking effect to instantly achieve the Guaracha / Bounce groove.
-- **Resonant Squelch Filter**: State-Variable Lowpass filter capable of going down to 50Hz for pure sub isolation, paired with a squelechy resonance control.
-- **Pre-Master FX Suite**:
-  - **`Erosion`**: 12-bit DAC quantization and 2.8 kHz noise ring-modulator for small-speaker presence.
-  - **`Punch Slam`**: Transient compressor / OTT-style dynamic snap.
-  - **`Soft Clip`**: Dedicated analog tape & diode clipper with strict 0 dBFS ceiling.
-- **Mono-Locked Sub Bass**: Independent pure sine sub-oscillator with harmonic drive, strictly locked in mono to prevent club phase cancellation.
-- **High-Band Top Spread**: Modulated stereo chorus and dimension applied exclusively to frequencies **>180 Hz**.
-- **Retro TX81Z LCD Display**: 80s neon green & yellow dot-matrix calculator display with real-time vector phosphor oscilloscope.
-- **Extasis Logo Audition Pad**: Integrated tactile audition pad with real-time vertical drag pitch transposition ($\pm 12$ semitones).
-- **Full MIDI CC & Live Value Feedback**: Real-time numeric values displayed directly below every knob and mapped to standard MIDI CCs.
-- **30 Factory Presets**: Spanning Classic 90s House, Colombian Guaracha/Aleteo, UK Bounce, Russian Hardbass, and Modern Tech House.
+Standard 4- or 6-operator FM synthesizers are notoriously tedious to program; a slight tweak often destroys the harmonic structure, resulting in dissonant noise. **Extasis Donker solves this by locking every parameter into a mathematically calibrated "Sweet Spot"**. The architecture restricts you strictly to musically useful ranges. Every knob turn guarantees a snappy, phase-aligned, mix-ready bass that translates perfectly from festival line arrays to smartphone speakers. No menu diving, no filler — just pure, instantaneous low-end impact.
 
 ---
 
+## 🌟 Comprehensive Feature Set
 
-## 🔄 Recent Updates (August 2026)
+### 🎛️ 1. TX81Z-Modeled FM Engine
+* **2-Operator Core:** Authentically models the gritty, aliasing-rich phase modulation of vintage 80s Yamaha chips.
+* **Morphing Waveforms (TX WAVE):** Seamlessly blend between a Pure Sine (`W1`), the legendary Yamaha Half-Sine (`W5` - the secret to house organs), and an aggressive Full-Wave Rectified (`W3`) shape.
+* **Velocity Sensitivity (VEL SENS):** Deep velocity-to-modulation routing for highly expressive, dynamic sequencing.
 
-- **UI Redesign**: Fully compacted `700x400` layout featuring symmetrical rack margins.
-- **DSP Refinements**: 
-  - Precision anti-click algorithm completely eliminates unwanted pops on fast note retriggers and voice stealing.
-  - Amp envelope attack curvature smoothed for tighter transients without artifacts.
-- **Factory Presets**: Renamed and refined 30 built-in factory patches to be more discrete, elegant, and directly inspired by genre classics (e.g. *Blackout*, *Bamboo*, *Wigan*, *Kolbaser*, *Medallo*, *Speed Rip*).
-- **Header Geometry**: Millimeter-perfect button realignment for the Activate, Save, and navigation controls to respect right-side rack ear boundaries seamlessly.
+### ⚡ 2. Transient & Dynamics Processing
+* **Pitch Drop Laser Envelope:** Ultra-fast, exponential pitch sweep (0 to +24 semitones) applied directly to the carrier. Perfect for generating physical "thuds" or classic laser zaps.
+* **Auto Pump Sidechain:** Built-in, BPM-synced 1/4 note volume ducking. Instantly achieve the bouncing groove of Guaracha and UK Bounce without routing external kick drums.
+* **Punch Slam Compression:** A specialized upward/downward transient compressor modeled after the famous OTT algorithm, heavily optimized to glue the attack phase of bass patches.
+
+### 🎚️ 3. Filter & Harmonic Distortion
+* **State-Variable Resonant Filter (LP FILTER):** Smooth lowpass filter capable of sweeping down to 20Hz for pure sub isolation, paired with a distinct, squelchy resonance control.
+* **TX Crunch:** Accurately simulates the non-linear distortion and bit-reduction of vintage 12-bit hardware DACs.
+* **Erosion Grit:** Injects a carefully tuned 2.8 kHz noise ring-modulator signal. This psychoacoustic trick ensures your sub-bass cuts through on small laptop and phone speakers.
+
+### 🌌 4. Sub & Spatial Enhancement
+* **Mono-Locked Sub Oscillator:** An independent pure sine sub-oscillator that completely bypasses the FM engine and FX, strictly locked in mono to prevent club phase cancellation. Features its own dedicated harmonic saturation (`SUB TONE`).
+* **Top Spread (Dimension):** Modulated stereo chorus and widening that is *exclusively* applied to frequencies above 180 Hz. Widens the metallic "clank" of the donk while keeping the low-end perfectly mono and punchy.
+
+### 🖥️ 5. Modern UX & Workflow
+* **Fully Resizable UI:** Drag to scale the interface from compact setups to 4K displays while maintaining the perfect 700:400 aspect ratio.
+* **Dynamic TX81Z LCD & Oscilloscope:** Features an 80s neon-green dot-matrix display with a real-time vector phosphor oscilloscope.
+* **Hover Tooltips:** The LCD acts as a smart info-board, providing detailed technical descriptions of any parameter you hover over.
+* **Native Preset Management:** Includes 40 strictly curated factory presets across multiple genres. Built-in, ultra-reliable custom preset saving via an elegant in-app overlay.
+* **Extasis Audition Pad:** A tactile, clickable central logo pad that allows you to trigger notes and apply real-time vertical drag pitch transposition (±12 semitones).
+* **MIDI Expressiveness:** Native Pitch Bend wheel support (±2 semitones) and Mod Wheel (CC1) mapping that dynamically opens the filter cutoff up to +200% for live performance.
+
+---
+
+## 🔄 Recent Updates (v1.1)
+
+- **UI & UX Overhaul**: Fully resizable vector graphics. Symmetrical rack margins and millimeter-perfect header realignment.
+- **Licensing Elegance**: The "ACTIVATE" button now intelligently vanishes from the main interface upon successful registration, keeping your workspace pristine.
+- **Native Preset System**: Replaced OS-level dialogs with a beautiful, robust internal overlay for saving user presets (`SavePresetOverlay`).
+- **Factory Expansion**: Expanded the core library to exactly 40 genre-defining patches.
+- **DSP Refinements**: Introduced a surgical anti-click algorithm that completely eliminates unwanted pops on fast note retriggers and voice stealing. Carrier envelope attack curvature smoothed for tighter transients without digital artifacts.
+- **MIDI Mod Wheel Integration**: CC1 now natively drives filter cutoff expansion for organic live performances.
 
 ---
 
 ## 📖 Official Documentation & Manual
 
-For full technical specifications, preset sound design breakdowns, and parameter reference, see the **[Official User Manual (MANUAL.md)](MANUAL.md)** and **[Technical Architecture (TECHNICAL.md)](TECHNICAL.md)**.
+For full technical specifications, architecture diagrams, and release rules, please consult the included documentation files:
+- **[MANUAL.md](MANUAL.md)**
+- **[TECHNICAL.md](TECHNICAL.md)**
+- **[ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ---
 
 ## 📥 Download Pre-Compiled Binaries
 
-Official pre-compiled installers (**VST3**, **AU**, and **Standalone**) are available for macOS (Apple Silicon & Intel) and Windows (x64):
+Official pre-compiled installers (**VST3**, **AU**, and **Standalone**) are available for macOS (Apple Silicon & Intel) and Windows (x64).
 
-- **Releases & Builds**: Check the **[GitHub Releases](https://github.com/laurorobles/ExtasisDonker/releases)** or **[GitHub Actions](https://github.com/laurorobles/ExtasisDonker/actions)** tab.
+- **Releases**: Check the **[GitHub Releases](https://github.com/laurorobles/ExtasisDonker/releases)** or **[GitHub Actions](https://github.com/laurorobles/ExtasisDonker/actions)** tab.
 - **Official Store & Music**: [extasisrecords.bandcamp.com](https://extasisrecords.bandcamp.com)
 
 ---
@@ -86,7 +97,7 @@ Official pre-compiled installers (**VST3**, **AU**, and **Standalone**) are avai
 ### Prerequisites:
 - **CMake 3.15+**
 - **C++17 Compiler**: Xcode Clang (macOS) or Visual Studio 2022 / MSVC (Windows)
-- **JUCE Framework** (included / configured via CMake)
+- **JUCE Framework** (automatically configured via CMake)
 
 ### Build Instructions:
 
@@ -112,17 +123,14 @@ Run the included automated installer script for your OS:
 ## 🔑 License Activation & Support
 
 Extasis Donker features an offline cryptographic license verification system. 
-Upon purchase from our official store or partner marketplaces, you will receive your personal 20-character license key (`EXTD-XXXX-XXXX-XXXX-XXXX`) to unlock full permanent access.
+Upon purchase from our official store or partner marketplaces, you will receive your personal 16-character license key (`EXTD-XXXX-XXXX-XXXX-XXXX`) to unlock full permanent access.
 
-- **Official Store**: [extasisrecords.bandcamp.com](https://extasisrecords.bandcamp.com)
+- **Purchase License**: [laurorobles.gumroad.com](http://laurorobles.gumroad.com)
 - **Support & Inquiries**: Contact through Extasis Records Bandcamp.
 
 ---
 
 ## 👥 Credits & Contact
 
-- **DSP Architecture & Development**: Lauro Robles (`@laurorobles`)
+- **DSP Architecture & GUI Development**: Lauro Robles (`@laurorobles`)
 - **Label & Releases**: [Extasis Records](https://extasisrecords.bandcamp.com)
-
-
-> **Licencias:** Consigue tu licencia oficial en [http://laurorobles.gumroad.com](http://laurorobles.gumroad.com)
