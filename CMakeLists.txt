@@ -76,6 +76,7 @@ target_link_libraries(ExtasisDonker PRIVATE
 )
 
 # Custom post-build step to guarantee installation and app icon
+if(APPLE)
 add_custom_command(TARGET ExtasisDonker_Standalone POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.icns"
@@ -101,3 +102,4 @@ add_custom_command(TARGET ExtasisDonker_AU POST_BUILD
         "$ENV{HOME}/Library/Audio/Plug-Ins/Components/ExtasisDonker.component"
     COMMENT "Installing AU to ~/Library/Audio/Plug-Ins/Components/"
 )
+endif()

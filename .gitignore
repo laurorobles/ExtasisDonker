@@ -31,3 +31,4 @@ Makefile
 /_deps/
 
 release-*/
+*_licences.txt
