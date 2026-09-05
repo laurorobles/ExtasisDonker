@@ -6,6 +6,10 @@
 class ExtasisDonkerAudioProcessor : public juce::AudioProcessor
 {
 public:
+    bool isPluginLicensed = false;
+    int64_t demoStartTimeMs = 0;
+    bool demoExpired = false;
+    std::function<void()> onDemoExpired;
     ExtasisDonkerAudioProcessor();
     ~ExtasisDonkerAudioProcessor() override;
 
@@ -53,6 +57,8 @@ private:
 
     juce::AudioProcessorValueTreeState apvts;
     ExtasisDSP::DonkSynth synth;
+
+
     int currentProgramIndex = 0;
 
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
