@@ -1,4 +1,4 @@
-# ⚡ Extasis Donker (v1.0)
+# ⚡ Extasis Donker (v3.1.0)
 
 <p align="center">
   <img src="assets/logo.png" alt="Extasis Donker Logo" width="220" />
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.1.0-blue.svg" alt="Version 1.1" />
+  <img src="https://img.shields.io/badge/Version-3.1.0-blue.svg" alt="Version 1.1" />
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-lightgrey.svg" alt="Platform" />
   <img src="https://img.shields.io/badge/Format-VST3%20%7C%20AU%20%7C%20Standalone-orange.svg" alt="Format" />
   <img src="https://img.shields.io/badge/License-Commercial-green.svg" alt="License" />
@@ -63,7 +63,7 @@ Standard 4- or 6-operator FM synthesizers are notoriously tedious to program; a 
 
 ---
 
-## 🔄 Recent Updates (v1.1)
+## 🔄 Recent Updates (v3.1.0)
 
 - **UI & UX Overhaul**: Fully resizable vector graphics. Symmetrical rack margins and millimeter-perfect header realignment.
 - **Licensing Elegance**: The "ACTIVATE" button now intelligently vanishes from the main interface upon successful registration, keeping your workspace pristine.

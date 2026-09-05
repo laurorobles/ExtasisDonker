@@ -1,11 +1,22 @@
 cmake_minimum_required(VERSION 3.15)
-project(ExtasisDonker VERSION 3.0.1 LANGUAGES C CXX)
+project(ExtasisDonker VERSION 3.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # JUCE integration
-add_subdirectory(/Users/babyonk1/.gemini/antigravity/scratch/JUCE ${CMAKE_BINARY_DIR}/JUCE)
+if(EXISTS "/Users/babyonk1/.gemini/antigravity/scratch/JUCE/CMakeLists.txt")
+    add_subdirectory(/Users/babyonk1/.gemini/antigravity/scratch/JUCE ${CMAKE_BINARY_DIR}/JUCE)
+else()
+    include(FetchContent)
+    FetchContent_Declare(
+        JUCE
+        GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+        GIT_TAG 8.0.4
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(JUCE)
+endif()
 
 juce_add_binary_data(ExtasisDonker_Data
     SOURCES

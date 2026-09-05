@@ -45,9 +45,8 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup Ninja (Mac/Win)
-        if: runner.os != 'Linux'
-        uses: ashley-taylor/setup-ninja@v1.0.0
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
 
       - name: Configure CMake
         run: |
@@ -62,30 +61,17 @@ jobs:
         run: |
           mkdir -p artifacts
           
-          # VST3
-          for path in "build/ExtasisDonker_artefacts/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/Release/VST3/ExtasisDonker.vst3" "build/ExtasisDonker_artefacts/VST3/Extasis *.vst3" "build/ExtasisDonker_artefacts/Release/VST3/Extasis *.vst3"; do
-            if [ -d "$path" ]; then cp -r "$path" artifacts/; fi
-          done
+          # VST3 bundles
+          find build/ExtasisDonker_artefacts -name "*.vst3" -type d -exec cp -r "{}" artifacts/ \; 2>/dev/null || true
           
-          # AU
-          for path in "build/ExtasisDonker_artefacts/AU/ExtasisDonker.component" "build/ExtasisDonker_artefacts/Release/AU/ExtasisDonker.component"; do
-            if [ -d "$path" ]; then cp -r "$path" artifacts/; fi
-          done
+          # AU components (macOS)
+          find build/ExtasisDonker_artefacts -name "*.component" -type d -exec cp -r "{}" artifacts/ \; 2>/dev/null || true
           
-          # CLAP
-          for path in "build/ExtasisDonker_artefacts/CLAP/ExtasisDonker.clap" "build/ExtasisDonker_artefacts/Release/CLAP/ExtasisDonker.clap"; do
-            if [ -f "$path" ]; then cp "$path" artifacts/; fi
-          done
+          # Standalone App (macOS)
+          find build/ExtasisDonker_artefacts -name "*.app" -type d -exec cp -r "{}" artifacts/ \; 2>/dev/null || true
           
-          # Standalone Win
-          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.exe" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.exe"; do
-            if [ -f "$path" ]; then cp "$path" artifacts/; fi
-          done
-          
-          # Standalone Mac
-          for path in "build/ExtasisDonker_artefacts/Standalone/ExtasisDonker.app" "build/ExtasisDonker_artefacts/Release/Standalone/ExtasisDonker.app"; do
-            if [ -d "$path" ]; then cp -r "$path" artifacts/; fi
-          done
+          # Standalone EXE (Windows) & CLAP plugins
+          find build/ExtasisDonker_artefacts -type f \( -name "*.clap" -o -name "*.exe" \) -exec cp "{}" artifacts/ \; 2>/dev/null || true
           
           # Docs & Installer
           if [ -d "installer" ]; then
@@ -93,7 +79,7 @@ jobs:
             chmod +x artifacts/installer/INSTALL_MAC.command 2>/dev/null || true
             chmod +x artifacts/installer/INSTALL_LINUX.sh 2>/dev/null || true
           fi
-          for doc in MANUAL.md README.md PRESENTATION.md TECHNICAL.md FICHA_TECNICA.md ARCHITECTURE.md RELEASE_RULES.md; do
+          for doc in MANUAL.md README.md PRESENTATION.md TECHNICAL.md ARCHITECTURE.md RELEASE_RULES.md; do
             if [ -f "$doc" ]; then cp "$doc" artifacts/; fi
           done
 
@@ -144,29 +130,29 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "ExtasisDonker ${{ github.ref_name }}"
+          name: "Extasis Donker ${{ github.ref_name }}"
           body: |
-            ### 🚀 Lanzamiento Oficial ${{ github.ref_name }}
-            
-            Este release incluye los binarios e instaladores oficiales para **ExtasisDonker** en Windows, macOS y Linux.
-            
-            **Formatos incluidos:**
-            - **VST3**
-            - **CLAP**
-            - **Audio Unit (AU)** (macOS)
-            - **Standalone** (Aplicación independiente)
-            
-            **Documentación:**
-            - Manual de Usuario (`MANUAL.md`)
-            - Ficha Técnica (`TECHNICAL.md`)
-            - Presentación (`PRESENTATION.md`)
-            - Arquitectura DSP (`ARCHITECTURE.md`)
-            
-            ---
-            
-            ### 🔑 Licencia y Activación
-            Consigue tu clave de licencia oficial en **[Gumroad](http://laurorobles.gumroad.com)**.
-            *El plugin funcionará en modo demo (silenciado a los 10 minutos de uso continuo) hasta ingresar la licencia.*
+            ## ⚡ Extasis Donker ${{ github.ref_name }} — Official Release
+
+            Official multi-platform production release of **Extasis Donker**, the premier FM synthesis workstation purpose-built for hard-hitting Donk, LatelyBass, Guaracha, UK Bounce, and Club electronic music.
+
+            ### 🌟 Key Highlights & Features:
+            - **Official Plugin Identity**: Cleanly registered in all DAWs (Ableton Live, Logic Pro, FL Studio, Reaper, Cubase) as **Extasis Donker**.
+            - **TX81Z-Modeled FM Engine**: 2-Operator FM architecture with seamless continuous morphing between Pure Sine (W1), Yamaha Half-Sine (W5), and Rectified (W3) shapes.
+            - **Dynamic Vector GUI & Resizability**: Freely scalable vector UI with locked 700:400 aspect ratio, crisp typography on high-DPI/Retina/4K displays.
+            - **Interactive Info-Nav (LCD Tooltips)**: Real-time phosphor dot-matrix LCD displays live oscilloscope trace and dynamic hover descriptions for every parameter.
+            - **Native Preset System**: Internal overlay (`SavePresetOverlay`) for seamless in-app user preset saving, plus **40 curated factory presets**.
+            - **MIDI Expressiveness**: Pitch Bend wheel support (±2 semitones) and Mod Wheel (CC1) dynamically driving lowpass filter cutoff expansion up to +200%.
+            - **Tone & Space Processing**: Pre-master TX Crunch (12-bit DAC emulation), Erosion (2.8kHz ring mod), Punch Slam (OTT transient compression), dedicated mono sub-oscillator, and Top Spread stereo dimension above 180Hz.
+            - **Evaluation & Licensing**: 10-minute demo evaluation with graceful silence timeout; instant reactivation upon reloading or unlocking with offline serial.
+
+            ### 📦 Formats Included:
+            - **macOS**: Universal Binary (Apple Silicon ARM64 + Intel x86_64) — VST3, AU, CLAP, Standalone
+            - **Windows**: x64 — VST3, CLAP, Standalone (.exe)
+            - **Linux**: x64 — VST3, CLAP
+
+            ### 🔑 Licensing
+            Unlock your full lifetime license at **[Gumroad](http://laurorobles.gumroad.com)**.
           generate_release_notes: true
           files: final-assets/*
         env:

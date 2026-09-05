@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "============================================================"
-echo " ExtasisDonker - Linux Automated Installer"
+echo " Extasis Donker - Linux Automated Installer"
 echo "============================================================"
 
 INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -9,15 +9,21 @@ CLAP_DIR="$HOME/.clap"
 
 echo "[1/2] Installing VST3 Plugin to $VST3_DIR..."
 mkdir -p "$VST3_DIR"
-if [ -d "$INSTALL_DIR/ExtasisDonker.vst3" ]; then
-    cp -R "$INSTALL_DIR/ExtasisDonker.vst3" "$VST3_DIR/"
-fi
+for vst in "$INSTALL_DIR/Extasis Donker.vst3" "$INSTALL_DIR/ExtasisDonker.vst3" "$INSTALL_DIR/../Extasis Donker.vst3" "$INSTALL_DIR/../ExtasisDonker.vst3"; do
+    if [ -d "$vst" ]; then
+        cp -R "$vst" "$VST3_DIR/"
+        break
+    fi
+done
 
 echo "[2/2] Installing CLAP Plugin to $CLAP_DIR..."
 mkdir -p "$CLAP_DIR"
-if [ -f "$INSTALL_DIR/ExtasisDonker.clap" ]; then
-    cp "$INSTALL_DIR/ExtasisDonker.clap" "$CLAP_DIR/"
-fi
+for clap in "$INSTALL_DIR/Extasis Donker.clap" "$INSTALL_DIR/ExtasisDonker.clap" "$INSTALL_DIR/../Extasis Donker.clap" "$INSTALL_DIR/../ExtasisDonker.clap"; do
+    if [ -f "$clap" ]; then
+        cp "$clap" "$CLAP_DIR/"
+        break
+    fi
+done
 
 echo ""
 echo "============================================================"

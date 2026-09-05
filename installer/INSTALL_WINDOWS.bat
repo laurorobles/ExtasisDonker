@@ -1,7 +1,7 @@
 @echo off
 setlocal
 echo ============================================================
-echo  ExtasisDonker - Windows Automated Installer
+echo  Extasis Donker - Windows Automated Installer
 echo ============================================================
 
 set "INSTALL_DIR=%~dp0"
@@ -9,8 +9,15 @@ set "VST3_DIR=%COMMONPROGRAMFILES%\VST3"
 
 echo [1/1] Installing VST3 Plugin to %VST3_DIR%...
 if not exist "%VST3_DIR%" mkdir "%VST3_DIR%"
-if exist "%INSTALL_DIR%ExtasisDonker.vst3" (
-    xcopy /E /I /Y /Q "%INSTALL_DIR%ExtasisDonker.vst3" "%VST3_DIR%\ExtasisDonker.vst3"
+
+if exist "%INSTALL_DIR%Extasis Donker.vst3" (
+    xcopy /E /I /Y /Q "%INSTALL_DIR%Extasis Donker.vst3" "%VST3_DIR%\Extasis Donker.vst3"
+) else if exist "%INSTALL_DIR%ExtasisDonker.vst3" (
+    xcopy /E /I /Y /Q "%INSTALL_DIR%ExtasisDonker.vst3" "%VST3_DIR%\Extasis Donker.vst3"
+) else if exist "%INSTALL_DIR%..\Extasis Donker.vst3" (
+    xcopy /E /I /Y /Q "%INSTALL_DIR%..\Extasis Donker.vst3" "%VST3_DIR%\Extasis Donker.vst3"
+) else if exist "%INSTALL_DIR%..\ExtasisDonker.vst3" (
+    xcopy /E /I /Y /Q "%INSTALL_DIR%..\ExtasisDonker.vst3" "%VST3_DIR%\Extasis Donker.vst3"
 )
 
 echo.
