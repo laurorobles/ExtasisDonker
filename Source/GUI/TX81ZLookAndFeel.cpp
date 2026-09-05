@@ -102,7 +102,7 @@ void TX81ZLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& butto
         bounds.translate(0.0f, 1.0f);
 
     g.setColour(button.getToggleState() ? getCyanAccent() : juce::Colour(0xffd0d6e0));
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 11.0f, juce::Font::bold));
+    g.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), bounds.getHeight() * 0.42f, juce::Font::bold));
     g.drawFittedText(button.getButtonText(), bounds.toNearestInt(), juce::Justification::centred, 1);
 }
 

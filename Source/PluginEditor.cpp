@@ -44,6 +44,16 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
             activationOverlay.statusLabel.setText ("Invalid License Key. Please try again.", juce::dontSendNotification);
         }
     };
+    processorRef.onDemoExpired = [this]() {
+        if (!isActivated) {
+            activationOverlay.isExpired = true;
+            showActivationModal = true;
+            activationOverlay.setVisible(true);
+            activationOverlay.toFront(true);
+            repaint();
+        }
+    };
+
     activationOverlay.onContinueDemo = [this]() {
         showActivationModal = false;
         activationOverlay.setVisible (false);
@@ -468,6 +478,12 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     // Total available width: 652 - 480 = 172. 
     // Button widths: save=24, next=22, prev=22 (sum=68).
     // Remaining for presetBox = 172 - 68 - 6 (spacing) = 98.
+        // Scale fonts dynamically
+    for (auto& [id, ctrl] : controls) {
+        if (ctrl.label) ctrl.label->setFont(juce::FontOptions(9.5f * scale, juce::Font::bold));
+        if (ctrl.valueLabel) ctrl.valueLabel->setFont(juce::FontOptions(9.0f * scale, juce::Font::bold));
+    }
+
     presetBox.setBounds(480 * scale, 42 * scale, 98 * scale, 26 * scale);
     prevPresetBtn.setBounds(580 * scale, 42 * scale, 22 * scale, 26 * scale);
     nextPresetBtn.setBounds(604 * scale, 42 * scale, 22 * scale, 26 * scale);
@@ -512,7 +528,7 @@ void ExtasisDonkerAudioProcessorEditor::resized()
     placeKnob("glide_time",   378, 204, knobW, knobH);
     placeKnob("erosion_grit", 440, 204, knobW, knobH);
     placeKnob("punch_slam",   378, 298, knobW, knobH);
-    softClipBtn.setBounds(440, 318, 50, 26);
+    softClipBtn.setBounds(440 * scale, 318 * scale, 50 * scale, 26 * scale);
 
     // Section 4: Sub & Space (2x2 grid, x=504, w=148, ends=652)
     // Centered symmetrically: gaps of 16px (504+16=520, 520+50+16=586, 586+50+16=652)

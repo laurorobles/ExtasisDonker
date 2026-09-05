@@ -113,7 +113,8 @@ void TX81ZDisplay::paint(juce::Graphics& g)
     }
 
     // 3. Neon Display Typography
-    juce::Font monoFont(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::bold);
+    float scale = getWidth() / 420.0f;
+    juce::Font monoFont(juce::Font::getDefaultMonospacedFontName(), 13.0f * scale, juce::Font::bold);
     g.setFont(monoFont);
 
     // Top Header: Patch Name
