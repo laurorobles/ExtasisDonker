@@ -613,6 +613,24 @@ void ExtasisDonkerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 {
     juce::ScopedNoDenormals noDenormals;
 
+    // Demo Mode Logic
+    if (!isPluginLicensed && !demoExpired)
+    {
+        double elapsedMs = juce::Time::getMillisecondCounterHiRes() - demoStartTimeMs;
+        if (elapsedMs > 600000.0) // 10 minutes = 600,000 ms
+        {
+            demoExpired = true;
+            if (onDemoExpired)
+                juce::MessageManager::callAsync(onDemoExpired);
+        }
+    }
+
+    if (demoExpired && !isPluginLicensed)
+    {
+        buffer.clear();
+        return;
+    }
+
     // Handle incoming MIDI (Notes & CCs)
     for (const auto metadata : midiMessages)
     {
