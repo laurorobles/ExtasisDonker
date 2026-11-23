@@ -1,16 +1,14 @@
-# 🏗️ DSP & Software Architecture — Extasis Donker
+# 🏗️ DSP & Software Architecture — Extasis Donker (v4.0.0)
 
-This document provides a detailed overview of the digital signal processing (DSP) pipeline, control routing, and software architecture of **Extasis Donker**.
+This document provides a detailed overview of the digital signal processing (DSP) pipeline, thread-safety architecture, and software layers of **Extasis Donker** (Free & Open Source, GPLv3).
 
 ---
 
 ## 1. High-Level Signal Flow Diagram
 
-The following Mermaid diagram outlines the end-to-end signal chain from incoming MIDI messages to the stereo pre-master output:
-
 ```mermaid
 graph TD
-    MIDI[MIDI Input & Audition Pad] --> VoiceAlloc[Voice Allocator & Note Stack]
+    MIDI[DAW MIDI + Thread-Safe Audition Queue] --> VoiceAlloc[Voice Allocator & Note Stack]
     MIDI --> PitchBend[Pitch Bend Wheel ±2 st]
     MIDI --> ModWheel[Mod Wheel CC 1]
     
@@ -20,7 +18,7 @@ graph TD
     VoiceAlloc --> FMEnv[FM Decay Envelope 5-500 ms]
     VoiceAlloc --> AmpEnv[Amp Envelope & Anti-Click Retrigger]
     
-    FreqCalc --> ModOsc[Modulator Oscillator W1 / W5 / W3]
+    FreqCalc --> ModOsc[Modulator Oscillator W1 / W5 / W3 + Feedback]
     PitchTransient --> ModOsc
     FMEnv --> ModAmp[Modulator Level / Donk Punch]
     ModOsc --> ModAmp
@@ -29,65 +27,62 @@ graph TD
     PitchTransient --> CarrierOsc
     ModAmp --> CarrierOsc
     
-    CarrierOsc --> SVFFilter[State Variable Lowpass Filter 20Hz-20kHz]
-    ModWheel -.->|Opens Cutoff up to +200%| SVFFilter
-    
-    SVFFilter --> TXCrunch[TX Crunch 12-bit DAC Distortion]
-    TXCrunch --> Erosion[Erosion 2.8 kHz Ring Mod Noise]
-    Erosion --> PunchSlam[Punch Slam OTT Transient Compressor]
-    PunchSlam --> AutoPump[Auto Pump 1/4 Note BPM Sidechain]
-    
-    FreqCalc --> SubOsc[Dedicated Mono Sub Oscillator]
+    FreqCalc --> SubOsc[Dedicated Mono Sub Oscillator -1 Oct]
     SubOsc --> SubTone[Sub Tone Harmonic Saturation]
     SubTone --> SubGain[Sub Gain Control]
+
+    CarrierOsc --> SumVoice[Voice Sum + Amp Envelope]
+    SubGain --> SumVoice
     
-    AutoPump --> Crossover[Crossover Filter 180 Hz]
-    Crossover -->|Highs >180 Hz| TopSpread[Top Spread Stereo Dimension Chorus]
-    Crossover -->|Lows <180 Hz| MonoSum[Mono Low Sum]
+    SumVoice --> SVFFilter[Smoothed TPT State Variable Lowpass Filter]
+    ModWheel -.->|Opens Cutoff up to +200%| SVFFilter
     
-    TopSpread --> StereoMixer[Stereo Bus Summing]
+    SVFFilter --> BaseEQ[35 Hz DC Blocker + 1.5 kHz Presence EQ]
+    BaseEQ --> Erosion[Erosion 2.8 kHz Ring Mod + 12-Bit Grit]
+    Erosion --> PunchSlam[Punch Slam Sample-Rate Independent OTT Comp]
+    
+    PunchSlam --> Crossover[Crossover Filter 180 Hz]
+    Crossover -->|Highs >180 Hz| TopSpread[Interpolated Top Spread Stereo Chorus]
+    Crossover -->|Lows <180 Hz| MonoSum[Strict Mono Low Sum]
+    
+    TopSpread --> StereoMixer[Stereo Bus Recombine]
     MonoSum --> StereoMixer
-    SubGain --> StereoMixer
     
-    StereoMixer --> SoftClip[Pre-Master 0 dBFS Soft Clipper]
-    SoftClip --> MasterGain[Master Output Volume]
+    StereoMixer --> Drive[TX Crunch Drive Saturation]
+    Drive --> SoftClip[Pre-Master 0 dBFS Tanh Soft Clipper]
+    SoftClip --> MasterGain[Smoothed Master Gain + Auto Pump Sidechain]
     MasterGain --> AudioOut[Stereo Output Buffers]
+    AudioOut -.->|Lock-Free AbstractFifo & Atomics| LCD[TX81Z LCD Scope & Peak Meter]
 ```
 
 ---
 
-## 2. DSP Modules Breakdown
+## 2. Real-Time Thread Safety Architecture
 
-### 2.1. DonkSynth (`Source/DSP/DonkSynth.h`)
-The primary polyphonic/monophonic synthesis engine managing voice triggering, envelope generators, and parameter updates.
-- **Retrigger Smoothing**: Checks if the previous note is still vibrating (`ampEnvelope.getCurrentLevel() < 0.05f`). If level is high, it avoids hard phase resets, preventing digital clicks on fast 1/16th and 1/32nd note retriggers.
-- **Pitch Transient**: Implements an exponential semitone decay curve modeled as \( f(t) = f_0 \cdot 2^{(\Delta_{\text{pitch}} \cdot e^{-t/\tau}) / 12} \).
-
-### 2.2. DonkOscillator (`Source/DSP/DonkOscillator.h`)
-Implements the 2-operator phase-modulation algorithm modeled after the Yamaha TX81Z:
-- **Waveform 1 (Sine)**: Standard \( \sin(\theta) \).
-- **Waveform 5 (Half-Sine)**: \( \sin(\theta) \) for \( 0 \le \theta < \pi \), and \( 0 \) for \( \pi \le \theta < 2\pi \).
-- **Waveform 3 (Rectified Sine)**: \( |\sin(\theta)| \).
-
-### 2.3. SnappyEnvelope (`Source/DSP/SnappyEnvelope.h`)
-High-precision exponential decay generator with analog-style curvature specifically calculated for ultra-tight percussive attacks.
-
-### 2.4. StereoProcessor (`Source/DSP/StereoProcessor.h`)
-Handles the non-linear distortion, spatial widening, and dynamics processing:
-- **Erosion**: Generates a modulated sinusoidal carrier at 2.8 kHz multiplied by high-frequency white noise.
-- **Top Spread**: A dual-delay modulated chorus matrix operating exclusively on the high-pass filtered signal (\( f_c = 180 \text{ Hz} \)).
-- **Soft Clipper**: Cubic polynomial waveshaper \( y = x - \frac{1}{3}x^3 \) with soft knee transition into saturation.
+- **Audio Thread (`processBlock`)**:
+  - Reads parameters exclusively via cached `std::atomic<float>*` pointers (zero string lookups).
+  - Drains GUI audition notes via a non-blocking `juce::SpinLock::ScopedTryLockType` swap.
+  - Pushes waveform samples into a fixed-size lock-free `juce::AbstractFifo` ring buffer and updates peak/MIDI telemetry via `std::atomic`.
+  - Zero mutexes, zero heap allocations, zero GUI callbacks on the audio thread.
+- **GUI Thread (`TX81ZDisplay::timerCallback` @ 30 Hz)**:
+  - Safely pops samples from the processor's lock-free `AbstractFifo` and consumes atomic peak/MIDI telemetry.
 
 ---
 
-## 3. License Manager (`Source/LicenseManager.h`)
-Manages offline licensing via dual 64-bit cryptographic hashing. Validates keys matching `EXTD-XXXX-XXXX-XXXX-XXXX` with zero network access required.
+## 3. DSP Modules Breakdown
+
+- **`Source/DSP/DonkSynth.h`**: Voice management, legato portamento, anti-click phase handling, smoothed filter cutoff and master gain, transport-aware Auto Pump, and 250 ms stereo tail handling.
+- **`Source/DSP/DonkOscillator.h`**: 2-operator FM engine with continuous W1/W5/W3 waveform morphing, Yamaha-style feedback loop, and phase-aligned sub-oscillator.
+- **`Source/DSP/SnappyEnvelope.h`**: Exponential decay envelope generators for FM, Amp, and micro-pitch transient snap.
+- **`Source/DSP/StereoProcessor.h`**: Base EQ, Erosion ring-mod/quantizer, sample-rate-independent Punch Slam, 180 Hz mono/stereo crossover with linearly interpolated Top Spread chorus (dynamically sized for up to 192 kHz), drive, and 0 dBFS soft clipper.
 
 ---
 
-## 4. GUI & Architecture Layers (`Source/GUI/`)
-- **PluginProcessor (`Source/PluginProcessor.cpp`)**: JUCE audio processor interface managing APVTS (AudioProcessorValueTreeState), preset serialization (`.edpreset`), and 10-minute demo evaluation tracking.
-- **PluginEditor (`Source/PluginEditor.cpp`)**: Dynamic resizable editor handling vector geometry, mouseover notifications, and coordinate scaling.
-- **TX81ZDisplay (`Source/GUI/TX81ZDisplay.cpp`)**: Vector phosphor oscilloscope and dot-matrix typography display.
-- **SavePresetOverlay (`Source/GUI/SavePresetOverlay.h`)**: Modal preset creation overlay ensuring reliable cross-DAW preset saving.
-- **ActivationOverlay (`Source/GUI/ActivationOverlay.h`)**: Offline serial registration modal.
+## 4. GUI & Application Layers
+
+- **`Source/PluginProcessor.h/.cpp`**: JUCE AudioProcessor, APVTS parameter tree, 40-preset factory table, XML user preset serialization, and lock-free telemetry bridge.
+- **`Source/PluginEditor.h/.cpp`**: Scalable 700:400 vector rack editor, double-click default reset, hover tooltip routing.
+- **`Source/GUI/TX81ZLookAndFeel.h/.cpp`**: Custom hardware rotary knobs, rubberized toggle buttons, and dark/cyan ComboBox & PopupMenu styling.
+- **`Source/GUI/TX81ZDisplay.h/.cpp`**: Phosphor dot-matrix LCD with zero-crossing oscilloscope, vertical peak meter, and MIDI LED.
+- **`Source/GUI/DonkTriggerButton.h/.cpp`**: Tactile audition logo pad with ±12 semitone vertical pitch drag.
+- **`Source/GUI/SavePresetOverlay.h`**: Native scalable modal overlay for saving `.edpreset` files with Return/Escape support.

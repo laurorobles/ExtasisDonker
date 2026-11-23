@@ -73,13 +73,13 @@ jobs:
           # Standalone EXE (Windows) & CLAP plugins
           find build/ExtasisDonker_artefacts -type f \( -name "*.clap" -o -name "*.exe" \) -exec cp "{}" artifacts/ \; 2>/dev/null || true
           
-          # Docs & Installer
+          # Docs, License & Installer
           if [ -d "installer" ]; then
             cp -r installer artifacts/
             chmod +x artifacts/installer/INSTALL_MAC.command 2>/dev/null || true
             chmod +x artifacts/installer/INSTALL_LINUX.sh 2>/dev/null || true
           fi
-          for doc in MANUAL.md README.md PRESENTATION.md TECHNICAL.md ARCHITECTURE.md RELEASE_RULES.md; do
+          for doc in LICENSE MANUAL.md README.md PRESENTATION.md TECHNICAL.md ARCHITECTURE.md RELEASE_RULES.md; do
             if [ -f "$doc" ]; then cp "$doc" artifacts/; fi
           done
 
@@ -130,29 +130,36 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Extasis Donker ${{ github.ref_name }}"
+          name: "Extasis Donker ${{ github.ref_name }} (Free & Open Source)"
           body: |
-            ## ⚡ Extasis Donker ${{ github.ref_name }} — Official Release
+            ## ⚡ Extasis Donker ${{ github.ref_name }} — Free & Open Source Edition (GPLv3)
 
-            Official multi-platform production release of **Extasis Donker**, the premier FM synthesis workstation purpose-built for hard-hitting Donk, LatelyBass, Guaracha, UK Bounce, and Club electronic music.
+            **Extasis Donker** is now **100% Free & Open Source** under the **GNU General Public License v3.0 (GPLv3)** — no demo limits, no serial keys, no DRM!
 
-            ### 🌟 Key Highlights & Features:
-            - **Official Plugin Identity**: Cleanly registered in all DAWs (Ableton Live, Logic Pro, FL Studio, Reaper, Cubase) as **Extasis Donker**.
-            - **TX81Z-Modeled FM Engine**: 2-Operator FM architecture with seamless continuous morphing between Pure Sine (W1), Yamaha Half-Sine (W5), and Rectified (W3) shapes.
-            - **Dynamic Vector GUI & Resizability**: Freely scalable vector UI with locked 700:400 aspect ratio, crisp typography on high-DPI/Retina/4K displays.
-            - **Interactive Info-Nav (LCD Tooltips)**: Real-time phosphor dot-matrix LCD displays live oscilloscope trace and dynamic hover descriptions for every parameter.
-            - **Native Preset System**: Internal overlay (`SavePresetOverlay`) for seamless in-app user preset saving, plus **40 curated factory presets**.
-            - **MIDI Expressiveness**: Pitch Bend wheel support (±2 semitones) and Mod Wheel (CC1) dynamically driving lowpass filter cutoff expansion up to +200%.
-            - **Tone & Space Processing**: Pre-master TX Crunch (12-bit DAC emulation), Erosion (2.8kHz ring mod), Punch Slam (OTT transient compression), dedicated mono sub-oscillator, and Top Spread stereo dimension above 180Hz.
-            - **Evaluation & Licensing**: 10-minute demo evaluation with graceful silence timeout; instant reactivation upon reloading or unlocking with offline serial.
+            ### 🌟 Key Highlights & Improvements in v4.0.0:
+            - **Free & Open Source (GPLv3)**: Completely removed activation overlays, serial validation, and 10-minute demo restrictions.
+            - **Real-Time Safe Audio Engine**:
+              - Lock-free oscilloscope ring buffer (`juce::AbstractFifo`) — zero locks or allocations on the audio thread.
+              - Thread-safe audition MIDI queue (`SpinLock` swap in `processBlock`).
+              - Cached atomic parameter pointers and smoothed filter cutoff & master gain (zero zipper noise).
+              - Linearly interpolated stereo chorus (`Top Spread`) with dynamic sample-rate sizing (supports up to 192 kHz).
+              - Fixed `Auto Pump` so presets with 100% sidechain remain fully audible when DAW transport is stopped.
+              - Fixed Mod Wheel (CC 1) routing to dynamically open filter cutoff up to +200%.
+            - **GUI & UX Overhaul**:
+              - Fixed all resize scaling issues (bottom rack screws, cyan accent strip, knob labels, trigger pad glow, and custom preset ComboBox LookAndFeel).
+              - Wired native `SavePresetOverlay` with Return/Escape keyboard shortcuts.
+              - Integrated **Output Peak Meter** (with peak hold & clip indicator) and **MIDI Activity LED** inside the TX81Z phosphor LCD.
+              - Double-click any knob to reset to its factory default value.
+              - Fixed LCD hover tooltips for `AUTO PUMP`, `PITCH DROP`, and `RESONANCE`.
+            - **40 Curated Factory Presets**: 40 distinct, musically tuned club presets across UK Bounce, Guaracha, LatelyBass, Hardbass, Garage & Acid.
 
             ### 📦 Formats Included:
             - **macOS**: Universal Binary (Apple Silicon ARM64 + Intel x86_64) — VST3, AU, CLAP, Standalone
             - **Windows**: x64 — VST3, CLAP, Standalone (.exe)
             - **Linux**: x64 — VST3, CLAP
 
-            ### 🔑 Licensing
-            Unlock your full lifetime license at **[Gumroad](http://laurorobles.gumroad.com)**.
+            ### 🤝 License & Contributions
+            Released under **GNU GPLv3**. Contributions, pull requests, and custom presets are welcome!
           generate_release_notes: true
           files: final-assets/*
         env:

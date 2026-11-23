@@ -16,7 +16,7 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec)
     {
         currentSampleRate = spec.sampleRate > 0.0 ? spec.sampleRate : 44100.0;
-        
+
         oscillator.prepare(currentSampleRate);
         fmEnvelope.prepare(currentSampleRate);
         ampEnvelope.prepare(currentSampleRate);
@@ -25,13 +25,24 @@ public:
 
         filter.prepare(spec);
         filter.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
-        filter.setResonance(1.0f);
+        filter.setResonance(0.707f);
+
+        smoothedCutoff.reset(currentSampleRate, 0.015);
+        smoothedCutoff.setCurrentAndTargetValue(16000.0f);
+
+        smoothedMasterGain.reset(currentSampleRate, 0.010);
+        smoothedMasterGain.setCurrentAndTargetValue(1.0f);
+
+        ampEnvelope.setParameters(2.5f, 900.0f, 0.0f, 30.0f, 1.0f);
+        lastFmDecayMs = -1.0f;
+        lastGlideMs = -1.0f;
 
         currentFreq = 0.0f;
         targetFreq = 0.0f;
         glideCoeff = 0.0f;
         currentVelocity = 1.0f;
         activeMidiNote = -1;
+        tailSamplesRemaining = 0;
     }
 
     void reset()
@@ -43,6 +54,9 @@ public:
         stereoProcessor.reset();
         filter.reset();
         activeMidiNote = -1;
+        pitchBendSemitones = 0.0f;
+        modWheelValue = 0.0f;
+        tailSamplesRemaining = 0;
         heldNotes.clear();
     }
 
@@ -52,6 +66,7 @@ public:
         {
             int noteNumber = msg.getNoteNumber();
             float velocity = msg.getFloatVelocity();
+            heldNotes.removeAllInstancesOf(noteNumber);
             heldNotes.add(noteNumber);
             triggerNote(noteNumber, velocity);
         }
@@ -81,7 +96,7 @@ public:
         }
         else if (msg.isController() && msg.getControllerNumber() == 1)
         {
-            // Mod wheel
+            // Mod wheel (CC 1) opens lowpass filter cutoff dynamically
             modWheelValue = (float)msg.getControllerValue() / 127.0f;
         }
         else if (msg.isAllNotesOff() || msg.isAllSoundOff())
@@ -101,15 +116,15 @@ public:
         if (!isLegato || activeMidiNote < 0)
         {
             currentFreq = targetFreq;
-            
-            // ANTI-CLICK: If the voice is already sounding loudly, DO NOT reset the phase 
+
+            // ANTI-CLICK: If the voice is already sounding loudly, DO NOT reset the phase
             // to avoid a discontinuous jump (pop). If it's silent, reset phase for max punch.
             if (ampEnvelope.getCurrentLevel() < 0.05f)
             {
                 oscillator.reset();
                 ampEnvelope.forceZero();
             }
-            
+
             ampEnvelope.noteOn();
             fmEnvelope.noteOn();
             pitchTransient.trigger(pitchDropAmount * 24.0f, 12.0f); // up to 24 semitones snap
@@ -123,10 +138,15 @@ public:
         }
 
         activeMidiNote = noteNumber;
+        tailSamplesRemaining = (int)(currentSampleRate * 0.25); // 250ms stereo tail allowance
     }
 
     void updateGlide(float glideMs)
     {
+        if (std::abs(glideMs - lastGlideMs) < 0.01f)
+            return;
+
+        lastGlideMs = glideMs;
         if (glideMs <= 1.0f)
         {
             glideCoeff = 0.0f;
@@ -145,6 +165,7 @@ public:
                  float pumpAmount,
                  double bpm,
                  double ppqPosition,
+                 bool isHostPlaying,
                  float modSens,
                  float wavePosition,
                  float subGainDb,
@@ -163,20 +184,21 @@ public:
         pitchDropAmount = pitchDrop;
         updateGlide(glideMs);
 
-        // Update envelope parameters (timeScale fixed to 1.0)
-        // Modulator (FM) Envelope: Very short decay, 0 sustain, short release for the 'click'
-        fmEnvelope.setParameters(1.5f, fmEnvDecayMs, 0.0f, 20.0f, 1.0f);
-        // Carrier (Amp) Envelope: Medium-short decay, 0 sustain, short release for true Donk bounce
-        ampEnvelope.setParameters(2.5f, 900.0f, 0.0f, 30.0f, 1.0f);
+        // Update FM envelope decay only when changed
+        if (std::abs(fmEnvDecayMs - lastFmDecayMs) > 0.01f)
+        {
+            lastFmDecayMs = fmEnvDecayMs;
+            fmEnvelope.setParameters(1.5f, fmEnvDecayMs, 0.0f, 20.0f, 1.0f);
+        }
 
-        // Filter cutoff & resonance
-        // Mod wheel opens filter further
+        // Filter cutoff & resonance targets (smoothed per-sample below)
         float velCutoffScale = 1.0f + (currentVelocity - 0.5f) * modSens * 0.6f;
         float modWheelCutoffScale = 1.0f + (modWheelValue * 2.0f); // up to +200% cutoff via mod wheel
-        float actualCutoff = juce::jlimit(20.0f, 20000.0f, filterCutoffHz * velCutoffScale * modWheelCutoffScale);
-        filter.setCutoffFrequency(actualCutoff);
-        // Map 0-1 resonance to 0.707 (min) - 5.0 (max) for a squelechy ladder behavior
+        float targetCutoff = juce::jlimit(20.0f, 20000.0f, filterCutoffHz * velCutoffScale * modWheelCutoffScale);
+        smoothedCutoff.setTargetValue(targetCutoff);
         filter.setResonance(juce::jmap(filterResoAmount, 0.707f, 5.0f));
+
+        smoothedMasterGain.setTargetValue(masterVolGain);
 
         // Sub gain linear
         float subGainLinear = subGainDb <= -35.0f ? 0.0f : juce::Decibels::decibelsToGain(subGainDb);
@@ -189,24 +211,30 @@ public:
         auto* rightChannel = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1) : nullptr;
         int numSamples = buffer.getNumSamples();
 
-        double samplesPerBeat = (currentSampleRate * 60.0) / (bpm > 0 ? bpm : 120.0);
+        double samplesPerBeat = (currentSampleRate * 60.0) / (bpm > 0.0 ? bpm : 120.0);
 
         for (int i = 0; i < numSamples; ++i)
         {
-            // Pump Ducking (1/4 note sidechain)
-            double currentPpq = ppqPosition + ((double)i / samplesPerBeat);
-            double fraction = currentPpq - std::floor(currentPpq);
-            float duckCurve = 1.0f - (float)std::pow(1.0 - fraction, 3.0); 
-            float pumpMultiplier = (1.0f - pumpAmount) + (pumpAmount * duckCurve);
+            float currentCutoff = smoothedCutoff.getNextValue();
+            filter.setCutoffFrequency(currentCutoff);
+            float currentMasterGain = smoothedMasterGain.getNextValue();
+
+            // Pump Ducking (1/4 note sidechain, active only while host transport is playing
+            // so presets remain fully audible when auditioning with transport stopped)
+            float pumpMultiplier = 1.0f;
+            if (isHostPlaying && pumpAmount > 0.001f)
+            {
+                double currentPpq = ppqPosition + ((double)i / samplesPerBeat);
+                double fraction = currentPpq - std::floor(currentPpq);
+                float duckCurve = 1.0f - (float)std::pow(1.0 - fraction, 3.0);
+                pumpMultiplier = (1.0f - pumpAmount) + (pumpAmount * duckCurve);
+            }
+
             // Pitch glide calculation
             if (glideCoeff > 0.0f && currentFreq > 0.0f)
-            {
                 currentFreq = targetFreq + (currentFreq - targetFreq) * glideCoeff;
-            }
             else
-            {
                 currentFreq = targetFreq;
-            }
 
             // Pitch transient modulation (click) and global pitch bend
             float pitchSnapSemitones = pitchTransient.getNextSemitoneOffset();
@@ -217,27 +245,34 @@ public:
             float fmEnvVal = fmEnvelope.getNextSample();
             float ampEnvVal = ampEnvelope.getNextSample();
 
-            if (!ampEnvelope.isActive() && activeMidiNote < 0)
+            float synthOut = 0.0f;
+            bool voiceRunning = ampEnvelope.isActive() || activeMidiNote >= 0;
+
+            if (voiceRunning)
+            {
+                auto [carrierOut, subOut] = oscillator.processSample(
+                    snappedFreq,
+                    fmTuneRatio,
+                    effectiveFmAmount,
+                    fmEnvVal,
+                    txCrunch,
+                    wavePosition,
+                    subTone
+                );
+                synthOut = (carrierOut + subOut * subGainLinear) * ampEnvVal;
+                tailSamplesRemaining = (int)(currentSampleRate * 0.25);
+            }
+            else if (tailSamplesRemaining <= 0 || reverbSpace <= 0.001f)
             {
                 leftChannel[i] = 0.0f;
                 if (rightChannel != nullptr)
                     rightChannel[i] = 0.0f;
                 continue;
             }
-
-            // Synthesis core: FM Carrier + Sub
-            auto [carrierOut, subOut] = oscillator.processSample(
-                snappedFreq,
-                fmTuneRatio,
-                effectiveFmAmount,
-                fmEnvVal,
-                txCrunch,
-                wavePosition,
-                subTone
-            );
-
-            // Sum FM Carrier + Sub with amp envelope
-            float synthOut = (carrierOut + subOut * subGainLinear) * ampEnvVal;
+            else
+            {
+                --tailSamplesRemaining;
+            }
 
             // Lowpass Filter
             float filteredOut = filter.processSample(0, synthOut);
@@ -249,9 +284,10 @@ public:
                                           erosionAmount, punchSlamAmount, enableSoftClip);
 
             // Master Volume with Pump Ducking
-            leftChannel[i] = leftSample * masterVolGain * pumpMultiplier;
+            float finalGain = currentMasterGain * pumpMultiplier;
+            leftChannel[i] = leftSample * finalGain;
             if (rightChannel != nullptr)
-                rightChannel[i] = rightSample * masterVolGain * pumpMultiplier;
+                rightChannel[i] = rightSample * finalGain;
         }
     }
 
@@ -266,14 +302,20 @@ private:
     StereoProcessor stereoProcessor;
     juce::dsp::StateVariableTPTFilter<float> filter;
 
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> smoothedCutoff;
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> smoothedMasterGain;
+
     float currentFreq = 0.0f;
     float targetFreq = 0.0f;
     float glideCoeff = 0.0f;
+    float lastGlideMs = -1.0f;
+    float lastFmDecayMs = -1.0f;
     float currentVelocity = 1.0f;
     float pitchBendSemitones = 0.0f;
     float modWheelValue = 0.0f;
     float pitchDropAmount = 0.5f;
     int activeMidiNote = -1;
+    int tailSamplesRemaining = 0;
     juce::Array<int> heldNotes;
 };
 

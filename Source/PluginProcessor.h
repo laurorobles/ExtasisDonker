@@ -1,15 +1,13 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
+#include <array>
+#include <atomic>
 #include "DSP/DonkSynth.h"
 
 class ExtasisDonkerAudioProcessor : public juce::AudioProcessor
 {
 public:
-    bool isPluginLicensed = false;
-    int64_t demoStartTimeMs = 0;
-    bool demoExpired = false;
-    std::function<void()> onDemoExpired;
     ExtasisDonkerAudioProcessor();
     ~ExtasisDonkerAudioProcessor() override;
 
@@ -46,18 +44,55 @@ public:
     juce::AudioProcessorValueTreeState& getAPVTS() { return apvts; }
     ExtasisDSP::DonkSynth& getSynth() { return synth; }
 
+    // Thread-safe audition trigger from GUI
     void triggerAuditionNote(int noteNumber = 36, float velocity = 1.0f);
     void releaseAuditionNote(int noteNumber = 36);
 
-    std::function<void(const float* samples, int numSamples)> onAudioBlockProcessed;
-    std::function<void(int ccNumber, float value)> onMidiCCReceived;
+    // Lock-free audio FIFO for oscilloscope & metering
+    static constexpr int scopeFifoCapacity = 4096;
+    int popScopeSamples(float* dest, int maxSamples);
+    float consumeOutputPeak();
+    bool consumeMidiActivity();
+    int consumeLastMidiCC();
 
 private:
-    uint64_t samplesProcessed = 0;
+    void pushScopeSamples(const float* samples, int numSamples);
 
     juce::AudioProcessorValueTreeState apvts;
     ExtasisDSP::DonkSynth synth;
 
+    // Cached atomic parameter pointers (zero string lookups on audio thread)
+    std::atomic<float>* pFmAmount = nullptr;
+    std::atomic<float>* pFmTune = nullptr;
+    std::atomic<float>* pWavePosition = nullptr;
+    std::atomic<float>* pFmEnv = nullptr;
+    std::atomic<float>* pPumpAmount = nullptr;
+    std::atomic<float>* pModAmount = nullptr;
+    std::atomic<float>* pPitchDrop = nullptr;
+    std::atomic<float>* pTxCrunch = nullptr;
+    std::atomic<float>* pErosionGrit = nullptr;
+    std::atomic<float>* pPunchSlam = nullptr;
+    std::atomic<float>* pSoftClip = nullptr;
+    std::atomic<float>* pSubGain = nullptr;
+    std::atomic<float>* pSubTone = nullptr;
+    std::atomic<float>* pFilterCutoff = nullptr;
+    std::atomic<float>* pFilterReso = nullptr;
+    std::atomic<float>* pReverbSpace = nullptr;
+    std::atomic<float>* pGlideTime = nullptr;
+    std::atomic<float>* pMasterVol = nullptr;
+
+    // Thread-safe audition MIDI queue
+    juce::SpinLock auditionMidiLock;
+    juce::MidiBuffer pendingAuditionMidi;
+
+    // Lock-free FIFO for GUI oscilloscope
+    juce::AbstractFifo scopeFifo { scopeFifoCapacity };
+    std::array<float, scopeFifoCapacity> scopeFifoBuffer {};
+
+    // Atomic telemetry for GUI
+    std::atomic<float> outputPeak { 0.0f };
+    std::atomic<bool> midiActivity { false };
+    std::atomic<int> lastMidiCC { -1 };
 
     int currentProgramIndex = 0;
 

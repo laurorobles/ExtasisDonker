@@ -1,78 +1,12 @@
 #include "PluginEditor.h"
 
 ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonkerAudioProcessor& p)
-    : AudioProcessorEditor(&p), processorRef(p)
+    : AudioProcessorEditor(&p), processorRef(p), display(p)
 {
-    
-    
-
-    isActivated = LicenseManager::isLicensed();
-
-    addAndMakeVisible (licenseBadgeButton);
-    licenseBadgeButton.setButtonText (isActivated ? "LICENSED" : "ACTIVATE");
-    licenseBadgeButton.setColour (juce::TextButton::buttonColourId, isActivated ? juce::Colour (0xff27ae60) : juce::Colour (0xffe74c3c));
-    licenseBadgeButton.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
-    licenseBadgeButton.onClick = [this]() {
-        if (!isActivated)
-        {
-            showActivationModal = true;
-            activationOverlay.setVisible (true);
-            activationOverlay.toFront (true);
-            repaint();
-        }
-    };
-    licenseBadgeButton.setVisible (!isActivated); // Only show when not activated, per user request.
-
-    addChildComponent (activationOverlay);
-    activationOverlay.onActivate = [this](const juce::String& key) {
-        if (LicenseManager::saveLicense (key))
-        {
-            isActivated = true;
-            activationOverlay.statusLabel.setColour (juce::Label::textColourId, juce::Colour (0xff2ecc71));
-            activationOverlay.statusLabel.setText ("License Activated Successfully! Welcome to Extasis Donker.", juce::dontSendNotification);
-            
-            juce::Timer::callAfterDelay (1500, [this]() {
-                showActivationModal = false;
-                activationOverlay.setVisible (false);
-                licenseBadgeButton.setVisible (false);
-                repaint();
-            });
-        }
-        else
-        {
-            activationOverlay.statusLabel.setColour (juce::Label::textColourId, juce::Colour (0xffe74c3c));
-            activationOverlay.statusLabel.setText ("Invalid License Key. Please try again.", juce::dontSendNotification);
-        }
-    };
-    processorRef.onDemoExpired = [this]() {
-        if (!isActivated) {
-            activationOverlay.isExpired = true;
-            showActivationModal = true;
-            activationOverlay.setVisible(true);
-            activationOverlay.toFront(true);
-            repaint();
-        }
-    };
-
-    activationOverlay.onContinueDemo = [this]() {
-        showActivationModal = false;
-        activationOverlay.setVisible (false);
-        repaint();
-    };
-
     setLookAndFeel(&customLookAndFeel);
 
     // 1. Display Setup
     addAndMakeVisible(display);
-    processorRef.onAudioBlockProcessed = [this](const float* samples, int numSamples) {
-        display.pushAudioSamples(samples, numSamples);
-    };
-
-    processorRef.onMidiCCReceived = [this](int ccNum, float /*val*/) {
-        juce::MessageManager::callAsync([this, ccNum]() {
-            display.setParameterReadout("MIDI IN (CC " + juce::String(ccNum) + ")", "AUTOMATION ACTIVE");
-        });
-    };
 
     // 2. Preset Selector & Navigation
     refreshPresetList();
@@ -81,6 +15,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     addAndMakeVisible(presetBox);
 
     prevPresetBtn.onClick = [this]() {
+        if (presetBox.getNumItems() <= 0) return;
         int cur = presetBox.getSelectedId() - 1;
         int next = (cur - 1 + presetBox.getNumItems()) % presetBox.getNumItems();
         presetBox.setSelectedId(next + 1, juce::sendNotification);
@@ -88,44 +23,40 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     addAndMakeVisible(prevPresetBtn);
 
     nextPresetBtn.onClick = [this]() {
+        if (presetBox.getNumItems() <= 0) return;
         int cur = presetBox.getSelectedId() - 1;
         int next = (cur + 1) % presetBox.getNumItems();
         presetBox.setSelectedId(next + 1, juce::sendNotification);
     };
     addAndMakeVisible(nextPresetBtn);
 
-    // Save Preset Button
-    savePresetBtn.onClick = [this]() {
-        auto* aw = new juce::AlertWindow("SAVE PRESET", "Enter a name for your custom preset:", juce::AlertWindow::QuestionIcon);
-        aw->setLookAndFeel(&customLookAndFeel);
-        aw->addTextEditor("name", "Custom Donk", "Preset Name:");
-        aw->addButton("SAVE", 1, juce::KeyPress(juce::KeyPress::returnKey));
-        aw->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-
-        aw->enterModalState(true, juce::ModalCallbackFunction::create([this, aw](int result) {
-            if (result == 1)
+    // Native Save Preset Overlay (replaces OS AlertWindow)
+    addChildComponent(savePresetOverlay);
+    savePresetOverlay.onSave = [this](const juce::String& name) {
+        savePresetOverlay.setVisible(false);
+        if (name.isNotEmpty() && processorRef.saveUserPreset(name))
+        {
+            refreshPresetList();
+            auto names = processorRef.getAllPresetNames();
+            for (int i = 0; i < names.size(); ++i)
             {
-                auto name = aw->getTextEditorContents("name").trim();
-                if (name.isNotEmpty())
+                if (names[i] == "[User] " + name)
                 {
-                    if (processorRef.saveUserPreset(name))
-                    {
-                        refreshPresetList();
-                        auto names = processorRef.getAllPresetNames();
-                        for (int i = 0; i < names.size(); ++i)
-                        {
-                            if (names[i].contains(name))
-                            {
-                                presetBox.setSelectedId(i + 1, juce::sendNotification);
-                                break;
-                            }
-                        }
-                        display.setParameterReadout("PRESET SAVED", name.toUpperCase());
-                    }
+                    presetBox.setSelectedId(i + 1, juce::sendNotification);
+                    break;
                 }
             }
-            delete aw;
-        }));
+            display.setParameterReadout("PRESET SAVED", name.toUpperCase());
+        }
+        repaint();
+    };
+    savePresetOverlay.onCancel = [this]() {
+        savePresetOverlay.setVisible(false);
+        repaint();
+    };
+
+    savePresetBtn.onClick = [this]() {
+        savePresetOverlay.prepareToShow("Custom Donk");
     };
     addAndMakeVisible(savePresetBtn);
 
@@ -148,7 +79,7 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
         processorRef.getAPVTS(), "soft_clip", softClipBtn);
     addAndMakeVisible(softClipBtn);
 
-    // 6. Create all Knobs with Live Value Labels & MouseListeners
+    // 5. Create all Knobs with Live Value Labels, Double-Click Default Reset & MouseListeners
     createKnob("fm_amount", "DONK PUNCH");
     createKnob("fm_tune", "FM RATIO");
     createKnob("wave_position", "TX WAVE");
@@ -157,14 +88,14 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
     createKnob("pump_amount", "AUTO PUMP");
     createKnob("tx_crunch", "TX CRUNCH");
     createKnob("pitch_drop", "PITCH DROP");
-    
+
     createKnob("filter_cutoff", "LP FILTER");
     createKnob("filter_reso", "RESONANCE");
     createKnob("glide_time", "GLIDE");
-    
+
     createKnob("erosion_grit", "EROSION");
     createKnob("punch_slam", "PUNCH SLAM");
-    
+
     createKnob("sub_gain", "SUB GAIN");
     createKnob("sub_tone", "SUB TONE");
     createKnob("reverb_space", "TOP SPREAD");
@@ -188,8 +119,6 @@ ExtasisDonkerAudioProcessorEditor::ExtasisDonkerAudioProcessorEditor(ExtasisDonk
 ExtasisDonkerAudioProcessorEditor::~ExtasisDonkerAudioProcessorEditor()
 {
     setLookAndFeel(nullptr);
-    processorRef.onAudioBlockProcessed = nullptr;
-    processorRef.onMidiCCReceived = nullptr;
 }
 
 void ExtasisDonkerAudioProcessorEditor::refreshPresetList()
@@ -198,9 +127,8 @@ void ExtasisDonkerAudioProcessorEditor::refreshPresetList()
     presetBox.clear(juce::dontSendNotification);
     auto presetNames = processorRef.getAllPresetNames();
     for (int i = 0; i < presetNames.size(); ++i)
-    {
         presetBox.addItem(presetNames[i], i + 1);
-    }
+
     if (currentId > 0 && currentId <= presetNames.size())
         presetBox.setSelectedId(currentId, juce::dontSendNotification);
 }
@@ -219,16 +147,18 @@ juce::String ExtasisDonkerAudioProcessorEditor::getFormattedValueText(const juce
         if (val < 75.0) return "Half " + juce::String((int)val) + "%";
         return "Rect " + juce::String((int)val) + "%";
     }
-    if (paramId == "time_scale")
-        return (val > 0.0 ? "+" : "") + juce::String((int)val) + " %";
+    if (paramId == "pump_amount")
+        return juce::String((int)val) + " %";
     if (paramId == "mod_amount")
         return juce::String((int)val) + " %";
-    if (paramId == "transient_click")
+    if (paramId == "pitch_drop")
         return juce::String((int)val) + " %";
     if (paramId == "tx_crunch")
         return juce::String((int)val) + " %";
     if (paramId == "filter_cutoff")
         return val >= 1000.0 ? juce::String(val * 0.001, 1) + " kHz" : juce::String((int)val) + " Hz";
+    if (paramId == "filter_reso")
+        return juce::String((int)val) + " %";
     if (paramId == "glide_time")
         return val <= 0.0 ? "Off" : juce::String((int)val) + " ms";
     if (paramId == "erosion_grit")
@@ -254,17 +184,21 @@ void ExtasisDonkerAudioProcessorEditor::createKnob(const juce::String& paramId, 
     ctrl.slider->addListener(this);
     ctrl.slider->addMouseListener(this, false);
     ctrl.slider->setName(paramId);
+
+    if (auto* param = processorRef.getAPVTS().getParameter(paramId))
+        ctrl.slider->setDoubleClickReturnValue(true, param->convertFrom0to1(param->getDefaultValue()));
+
     addAndMakeVisible(*ctrl.slider);
 
     ctrl.label = std::make_unique<juce::Label>("", labelText);
     ctrl.label->setJustificationType(juce::Justification::centred);
-    ctrl.label->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 9.5f, juce::Font::bold));
+    ctrl.label->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold)));
     ctrl.label->setColour(juce::Label::textColourId, juce::Colour(0xffc8cfdc));
     addAndMakeVisible(*ctrl.label);
 
     ctrl.valueLabel = std::make_unique<juce::Label>("", getFormattedValueText(paramId, 0.0));
     ctrl.valueLabel->setJustificationType(juce::Justification::centred);
-    ctrl.valueLabel->setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::bold));
+    ctrl.valueLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::plain)));
     ctrl.valueLabel->setColour(juce::Label::textColourId, ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
     addAndMakeVisible(*ctrl.valueLabel);
 
@@ -302,9 +236,7 @@ void ExtasisDonkerAudioProcessorEditor::buttonClicked(juce::Button* button)
 void ExtasisDonkerAudioProcessorEditor::mouseEnter(const juce::MouseEvent& e)
 {
     if (auto* slider = dynamic_cast<juce::Slider*>(e.eventComponent))
-    {
         updateParamDisplayForSlider(slider);
-    }
 }
 
 void ExtasisDonkerAudioProcessorEditor::mouseExit(const juce::MouseEvent&)
@@ -325,31 +257,29 @@ void ExtasisDonkerAudioProcessorEditor::updateParamDisplayForSlider(juce::Slider
     auto val = slider->getValue();
 
     if (controls.find(paramId) != controls.end() && controls[paramId].valueLabel)
-    {
         controls[paramId].valueLabel->setText(getFormattedValueText(paramId, val), juce::dontSendNotification);
-    }
 
     if (paramId == "fm_amount")
-        display.setParameterReadout("DONK PUNCH [CC 1]", juce::String((int)val) + "% FM MODULATION");
+        display.setParameterReadout("DONK PUNCH [CC 13]", juce::String((int)val) + "% FM MODULATION");
     else if (paramId == "fm_tune")
         display.setParameterReadout("FM RATIO [CC 14]", juce::String(val, 2) + "x (MOD/CARRIER)");
     else if (paramId == "wave_position")
     {
-        if (val < 25.0f)
+        if (val < 25.0)
             display.setParameterReadout("TX WAVE [CC 71]", "PURE SINE (W1) - " + juce::String((int)val) + "%");
-        else if (val < 75.0f)
+        else if (val < 75.0)
             display.setParameterReadout("TX WAVE [CC 71]", "TX81Z HALF-SINE (W5) - " + juce::String((int)val) + "%");
         else
             display.setParameterReadout("TX WAVE [CC 71]", "FULL RECTIFIED SINE (W3) - " + juce::String((int)val) + "%");
     }
     else if (paramId == "fm_env")
-        display.setParameterReadout("DONK TIME [CC 73]", juce::String((int)val) + " ms DECAY");
-    else if (paramId == "time_scale")
-        display.setParameterReadout("TIME SCALE [CC 12]", juce::String((int)val) + "% ENVELOPE SPEED");
+        display.setParameterReadout("DONK TIME [CC 73]", juce::String((int)val) + " ms FM DECAY");
+    else if (paramId == "pump_amount")
+        display.setParameterReadout("AUTO PUMP [CC 12]", juce::String((int)val) + "% 1/4-NOTE SIDECHAIN");
     else if (paramId == "mod_amount")
         display.setParameterReadout("VELOCITY SENS [CC 11]", juce::String((int)val) + "% DYNAMIC RESPONSE");
-    else if (paramId == "transient_click")
-        display.setParameterReadout("CLICK TRANSIENT [CC 15]", juce::String((int)val) + "% PITCH SNAP");
+    else if (paramId == "pitch_drop")
+        display.setParameterReadout("PITCH DROP [CC 15]", juce::String((int)val) + "% LASER TRANSIENT SNAP");
     else if (paramId == "tx_crunch")
         display.setParameterReadout("TX CRUNCH [CC 16]", juce::String((int)val) + "% FEEDBACK & SAT");
     else if (paramId == "erosion_grit")
@@ -361,19 +291,23 @@ void ExtasisDonkerAudioProcessorEditor::updateParamDisplayForSlider(juce::Slider
     else if (paramId == "sub_tone")
         display.setParameterReadout("SUB TONE [CC 20]", juce::String((int)val) + "% WARMTH");
     else if (paramId == "filter_cutoff")
-        display.setParameterReadout("LP FILTER [CC 74]", juce::String((int)val) + " Hz CUTOFF");
+        display.setParameterReadout("LP FILTER [CC 74]", juce::String((int)val) + " Hz CUTOFF (MOD=CC1)");
+    else if (paramId == "filter_reso")
+        display.setParameterReadout("RESONANCE [CC 75]", juce::String((int)val) + "% SVF PEAK");
     else if (paramId == "reverb_space")
         display.setParameterReadout("TOP SPREAD [CC 21]", juce::String((int)val) + "% STEREO CHORUS (>180Hz)");
     else if (paramId == "glide_time")
-        display.setParameterReadout("PORTAMENTO [CC 22]", val <= 0.0f ? "OFF" : juce::String((int)val) + " ms GLIDE");
+        display.setParameterReadout("PORTAMENTO [CC 22]", val <= 0.0 ? "OFF" : juce::String((int)val) + " ms GLIDE");
     else if (paramId == "master_vol")
         display.setParameterReadout("MASTER OUTPUT [CC 7]", juce::String(val, 1) + " dB");
 }
 
 void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    auto bounds = juce::Rectangle<float>(0, 0, 700, 400);
-    g.addTransform(juce::AffineTransform::scale((float)getWidth() / 700.0f, (float)getHeight() / 400.0f));
+    constexpr float baseW = 700.0f;
+    constexpr float baseH = 400.0f;
+    auto bounds = juce::Rectangle<float>(0.0f, 0.0f, baseW, baseH);
+    g.addTransform(juce::AffineTransform::scale((float)getWidth() / baseW, (float)getHeight() / baseH));
 
     // 1. Chassis: Dark Brushed Metal Rack
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getChassisColor());
@@ -391,10 +325,10 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillRect(rightEar);
 
     g.setColour(juce::Colour(0xff2b2f36));
-    g.drawVerticalLine((int)leftEar.getRight(), 0.0f, bounds.getBottom());
-    g.drawVerticalLine((int)rightEar.getX(), 0.0f, bounds.getBottom());
+    g.drawVerticalLine((int)leftEar.getRight(), 0.0f, baseH);
+    g.drawVerticalLine((int)rightEar.getX(), 0.0f, baseH);
 
-    // Screw Holes
+    // Screw Holes (using virtual 700x400 coordinates so scaling stays exact)
     auto drawScrew = [&g](float x, float y) {
         g.setColour(juce::Colour(0xff090a0c));
         g.fillEllipse(x - 9.0f, y - 9.0f, 18.0f, 18.0f);
@@ -408,34 +342,34 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
     };
 
     drawScrew(leftEar.getCentreX(), 35.0f);
-    drawScrew(leftEar.getCentreX(), getHeight() - 35.0f);
+    drawScrew(leftEar.getCentreX(), baseH - 35.0f);
     drawScrew(rightEar.getCentreX(), 35.0f);
-    drawScrew(rightEar.getCentreX(), getHeight() - 35.0f);
+    drawScrew(rightEar.getCentreX(), baseH - 35.0f);
 
-    // 3. Top Header: Title, Subtitle, TX-CORE DSP Decal
+    // 3. Top Header: Title, Subtitle, Open Source Badge
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 17.0f, juce::Font::bold));
-    g.drawText("EXTASIS DONKER", 50, 7, 185, 20, juce::Justification::left);
+    g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 17.0f, juce::Font::bold)));
+    g.drawText("EXTASIS DONKER", 48, 7, 185, 20, juce::Justification::left);
 
     g.setColour(juce::Colour(0xff8e96a4));
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
-    g.drawText("- FM BASS SYNTHESIZER // TX81Z ARCHITECTURE", 215, 9, 360, 18, juce::Justification::left);
+    g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold)));
+    g.drawText("// TX81Z FM BASS SYNTHESIZER", 210, 9, 260, 18, juce::Justification::left);
 
-    // Discreet Credit
-    g.setColour(juce::Colour(0xff2d333a)); // Very dark, blends in
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 7.5f, juce::Font::plain));
-    g.drawText("coded by @laurorobles", bounds.getWidth() - 110, bounds.getBottom() - 15, 100, 10, juce::Justification::right);
+    // Subtle Open Source Edition Hardware Decal (strictly aligned to right margin 652px)
+    g.setColour(juce::Colour(0xff4a5360));
+    g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold)));
+    g.drawText("OPEN SOURCE v4.0", 512, 10, 140, 16, juce::Justification::right);
 
-    // Right Decal: |||||||| TX-CORE DSP
+    // Discreet Credit at bottom-right
+    g.setColour(juce::Colour(0xff323842));
+    g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 7.5f, juce::Font::plain)));
+    g.drawText("coded by @laurorobles", 542, (int)(baseH - 13.0f), 110, 10, juce::Justification::right);
+
+    // Cyan horizontal accent strip (strictly 48..652 -> width 604)
     g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.5f, juce::Font::bold));
-    // Removed TX-CORE DSP for compact UI
+    g.fillRect(48.0f, 34.0f, baseW - 96.0f, 2.0f);
 
-    // Cyan horizontal accent strip
-    g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-    g.fillRect(48, 40, getWidth() - 96, 2);
-
-    // 4. Section Framing & Panels (Condensed Height: 218px)
+    // 4. Section Framing & Panels
     auto drawSectionBox = [&g](juce::Rectangle<float> r, const juce::String& title, bool isCore = false) {
         g.setColour(isCore ? juce::Colour(0xff14171a) : juce::Colour(0xff181a1e));
         g.fillRoundedRectangle(r, 4.0f);
@@ -444,18 +378,18 @@ void ExtasisDonkerAudioProcessorEditor::paint(juce::Graphics& g)
 
         // Section Title Header
         g.setColour(ExtasisGUI::TX81ZLookAndFeel::getCyanAccent());
-        g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold));
+        g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::bold)));
         g.drawText(title, (int)r.getX() + 8, (int)r.getY() + 4, (int)r.getWidth() - 16, 16, juce::Justification::left);
 
         g.setColour(juce::Colour(0x3300d4d4));
         g.drawHorizontalLine((int)r.getY() + 20, r.getX() + 8.0f, r.getRight() - 8.0f);
     };
 
-    // 4 Sections - symmetric margins (left ear at 38px, content at 48px, right content ends at 652)
-    drawSectionBox(juce::Rectangle<float>(48, 184, 248, 206), "1. FM SYNTHESIS CORE", true);
-    drawSectionBox(juce::Rectangle<float>(302, 184, 64, 206), "2. FILTER");
-    drawSectionBox(juce::Rectangle<float>(372, 184, 126, 206), "3. TONE & FX");
-    drawSectionBox(juce::Rectangle<float>(504, 184, 148, 206), "4. SUB & SPACE");
+    // 4 Sections - symmetric margins (left ear at 38px, content at 48px, right content ends at 652px)
+    drawSectionBox(juce::Rectangle<float>(48, 184, 248, 202), "1. FM SYNTHESIS CORE", true);
+    drawSectionBox(juce::Rectangle<float>(302, 184, 64, 202), "2. FILTER");
+    drawSectionBox(juce::Rectangle<float>(372, 184, 126, 202), "3. TONE & FX");
+    drawSectionBox(juce::Rectangle<float>(504, 184, 148, 202), "4. SUB & SPACE");
 }
 
 void ExtasisDonkerAudioProcessorEditor::resized()
@@ -464,76 +398,61 @@ void ExtasisDonkerAudioProcessorEditor::resized()
 
     // Global App Bounds
     auto bounds = getLocalBounds();
-    activationOverlay.setBounds(bounds);
     savePresetOverlay.setBounds(bounds);
-    
-    // Display in the center top
-    display.setBounds(48 * scale, 42 * scale, 420 * scale, 130 * scale);
 
-    // Top Right Header Button (License Activation)
-    // Align ACTIVATE button strictly to right margin (652) -> 652 - 70 = 582
-    licenseBadgeButton.setBounds(582 * scale, 20 * scale, 70 * scale, 16 * scale);
+    // Display in the center top
+    display.setBounds((int)(48 * scale), (int)(42 * scale), (int)(420 * scale), (int)(130 * scale));
 
     // Preset Selector, Navigation & Save Buttons
-    // Total available width: 652 - 480 = 172. 
-    // Button widths: save=24, next=22, prev=22 (sum=68).
-    // Remaining for presetBox = 172 - 68 - 6 (spacing) = 98.
-        // Scale fonts dynamically
-    for (auto& [id, ctrl] : controls) {
-        if (ctrl.label) ctrl.label->setFont(juce::FontOptions(9.5f * scale, juce::Font::bold));
-        if (ctrl.valueLabel) ctrl.valueLabel->setFont(juce::FontOptions(9.0f * scale, juce::Font::bold));
-    }
+    // Total available width: 652 - 480 = 172.
+    presetBox.setBounds((int)(480 * scale), (int)(42 * scale), (int)(98 * scale), (int)(26 * scale));
+    prevPresetBtn.setBounds((int)(580 * scale), (int)(42 * scale), (int)(22 * scale), (int)(26 * scale));
+    nextPresetBtn.setBounds((int)(604 * scale), (int)(42 * scale), (int)(22 * scale), (int)(26 * scale));
+    savePresetBtn.setBounds((int)(628 * scale), (int)(42 * scale), (int)(24 * scale), (int)(26 * scale));
 
-    presetBox.setBounds(480 * scale, 42 * scale, 98 * scale, 26 * scale);
-    prevPresetBtn.setBounds(580 * scale, 42 * scale, 22 * scale, 26 * scale);
-    nextPresetBtn.setBounds(604 * scale, 42 * scale, 22 * scale, 26 * scale);
-    savePresetBtn.setBounds(628 * scale, 42 * scale, 24 * scale, 26 * scale);
-
-    // Large Centered Logo Audition Trigger Pad right below Presets
-    // Max width 172, so it ends exactly at 480 + 172 = 652
-    triggerBtn.setBounds(480 * scale, 74 * scale, 172 * scale, 98 * scale);
+    // Large Centered Logo Audition Trigger Pad right below Presets (ends at 652)
+    triggerBtn.setBounds((int)(480 * scale), (int)(74 * scale), (int)(172 * scale), (int)(98 * scale));
 
     auto placeKnob = [this, scale](const juce::String& id, int x, int y, int w, int h) {
-        if (controls.find(id) != controls.end())
+        auto it = controls.find(id);
+        if (it != controls.end())
         {
-            // Smaller knob slider
-            controls[id].slider->setBounds(x * scale, y * scale, w * scale, (h - 24) * scale);
-            // Smaller labels that stretch slightly wider to fit text
-            controls[id].label->setBounds((x - 10) * scale, (y + h - 24) * scale, (w + 20) * scale, 12 * scale);
-            controls[id].valueLabel->setBounds((x - 10) * scale, (y + h - 12) * scale, (w + 20) * scale, 12 * scale);
-            controls[id].label->setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold));
-            controls[id].valueLabel->setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::plain));
+            auto& ctrl = it->second;
+            ctrl.slider->setBounds((int)(x * scale), (int)(y * scale), (int)(w * scale), (int)((h - 24) * scale));
+            ctrl.label->setBounds((int)((x - 10) * scale), (int)((y + h - 24) * scale), (int)((w + 20) * scale), (int)(12 * scale));
+            ctrl.valueLabel->setBounds((int)((x - 10) * scale), (int)((y + h - 12) * scale), (int)((w + 20) * scale), (int)(12 * scale));
+            ctrl.label->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), juce::jmax(6.5f, 8.5f * scale), juce::Font::bold)));
+            ctrl.valueLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), juce::jmax(6.5f, 9.0f * scale), juce::Font::plain)));
         }
     };
 
-    int knobW = 50;
-    int knobH = 74;
+    const int knobW = 50;
+    const int knobH = 74;
 
     // Section 1: FM Core (4x2 grid, x=48, w=248, ends=296)
-    placeKnob("fm_amount",    52, 204, knobW, knobH);
-    placeKnob("fm_tune",     114, 204, knobW, knobH);
+    placeKnob("fm_amount",     52, 204, knobW, knobH);
+    placeKnob("fm_tune",      114, 204, knobW, knobH);
     placeKnob("wave_position",176, 204, knobW, knobH);
-    placeKnob("mod_amount",  238, 204, knobW, knobH);
+    placeKnob("mod_amount",   238, 204, knobW, knobH);
 
-    placeKnob("fm_env",       52, 298, knobW, knobH);
-    placeKnob("pump_amount", 114, 298, knobW, knobH);
-    placeKnob("tx_crunch",   176, 298, knobW, knobH);
-    placeKnob("pitch_drop",  238, 298, knobW, knobH);
+    placeKnob("fm_env",        52, 296, knobW, knobH);
+    placeKnob("pump_amount",  114, 296, knobW, knobH);
+    placeKnob("tx_crunch",    176, 296, knobW, knobH);
+    placeKnob("pitch_drop",   238, 296, knobW, knobH);
 
-    // Section 2: Filter (1x2 grid, x=302, w=64 — single knob centered)
+    // Section 2: Filter (1x2 grid, x=302, w=64)
     placeKnob("filter_cutoff", 309, 204, knobW, knobH);
-    placeKnob("filter_reso",   309, 298, knobW, knobH);
+    placeKnob("filter_reso",   309, 296, knobW, knobH);
 
     // Section 3: Tone & FX (2x2 grid, x=372, w=126, ends=498)
     placeKnob("glide_time",   378, 204, knobW, knobH);
     placeKnob("erosion_grit", 440, 204, knobW, knobH);
-    placeKnob("punch_slam",   378, 298, knobW, knobH);
-    softClipBtn.setBounds(440 * scale, 318 * scale, 50 * scale, 26 * scale);
+    placeKnob("punch_slam",   378, 296, knobW, knobH);
+    softClipBtn.setBounds((int)(440 * scale), (int)(316 * scale), (int)(50 * scale), (int)(26 * scale));
 
     // Section 4: Sub & Space (2x2 grid, x=504, w=148, ends=652)
-    // Centered symmetrically: gaps of 16px (504+16=520, 520+50+16=586, 586+50+16=652)
-    placeKnob("sub_gain",    520, 204, knobW, knobH);
-    placeKnob("sub_tone",    586, 204, knobW, knobH);
-    placeKnob("reverb_space",520, 298, knobW, knobH);
-    placeKnob("master_vol",  586, 298, knobW, knobH);
+    placeKnob("sub_gain",     520, 204, knobW, knobH);
+    placeKnob("sub_tone",     586, 204, knobW, knobH);
+    placeKnob("reverb_space", 520, 296, knobW, knobH);
+    placeKnob("master_vol",   586, 296, knobW, knobH);
 }

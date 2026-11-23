@@ -44,19 +44,20 @@ void DonkTriggerButton::paint(juce::Graphics& g)
     g.drawRoundedRectangle(bounds, 6.0f, isTriggerActive ? 1.8f : 1.0f);
 
     // 2. Active / Hover Neon Backlight Glow behind Logo
-    auto logoArea = bounds.reduced(8.0f);
+    float scale = juce::jmax(0.4f, bounds.getWidth() / 168.0f);
+    auto logoArea = bounds.reduced(8.0f * scale);
 
     if (isTriggerActive)
     {
         g.setColour(juce::Colour(0x3039ff14));
-        g.fillEllipse(logoArea.getCentreX() - 40.0f, logoArea.getCentreY() - 40.0f, 80.0f, 80.0f);
+        g.fillEllipse(logoArea.getCentreX() - 40.0f * scale, logoArea.getCentreY() - 40.0f * scale, 80.0f * scale, 80.0f * scale);
         g.setColour(juce::Colour(0x60d4ff00));
-        g.fillEllipse(logoArea.getCentreX() - 25.0f, logoArea.getCentreY() - 25.0f, 50.0f, 50.0f);
+        g.fillEllipse(logoArea.getCentreX() - 25.0f * scale, logoArea.getCentreY() - 25.0f * scale, 50.0f * scale, 50.0f * scale);
     }
     else if (isMouseOver())
     {
         g.setColour(juce::Colour(0x2500d4d4));
-        g.fillEllipse(logoArea.getCentreX() - 35.0f, logoArea.getCentreY() - 35.0f, 70.0f, 70.0f);
+        g.fillEllipse(logoArea.getCentreX() - 35.0f * scale, logoArea.getCentreY() - 35.0f * scale, 70.0f * scale, 70.0f * scale);
     }
 
     // 3. Draw the High-Res Logo Image
@@ -64,7 +65,7 @@ void DonkTriggerButton::paint(juce::Graphics& g)
     {
         auto drawArea = logoArea;
         if (isTriggerActive)
-            drawArea = drawArea.translated(0.0f, 1.0f); // subtle 3D tactile button press
+            drawArea = drawArea.translated(0.0f, 1.0f * scale); // subtle 3D tactile button press
 
         float opacity = isTriggerActive ? 1.0f : (isMouseOver() ? 0.95f : 0.8f);
         g.setOpacity(opacity);
@@ -73,10 +74,11 @@ void DonkTriggerButton::paint(juce::Graphics& g)
     }
 
     // 4. Subtle Status LED / Note Badge Dot at bottom corner
-    float dotX = bounds.getRight() - 14.0f;
-    float dotY = bounds.getBottom() - 14.0f;
+    float dotSize = 6.0f * scale;
+    float dotX = bounds.getRight() - 14.0f * scale;
+    float dotY = bounds.getBottom() - 14.0f * scale;
     g.setColour(isTriggerActive ? TX81ZLookAndFeel::getLedRedOn() : (isMouseOver() ? juce::Colour(0xff882222) : TX81ZLookAndFeel::getLedRedOff()));
-    g.fillEllipse(dotX, dotY, 6.0f, 6.0f);
+    g.fillEllipse(dotX, dotY, dotSize, dotSize);
 }
 
 void DonkTriggerButton::mouseDown(const juce::MouseEvent& e)

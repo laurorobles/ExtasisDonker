@@ -1,18 +1,16 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <map>
 #include "PluginProcessor.h"
 #include "GUI/TX81ZLookAndFeel.h"
 #include "GUI/TX81ZDisplay.h"
 #include "GUI/DonkTriggerButton.h"
-#include "GUI/ActivationOverlay.h"
 #include "GUI/SavePresetOverlay.h"
-#include "LicenseManager.h"
-
 
 class ExtasisDonkerAudioProcessorEditor : public juce::AudioProcessorEditor,
-                                         public juce::Slider::Listener,
-                                         public juce::ComboBox::Listener,
-                                         public juce::Button::Listener
+                                          public juce::Slider::Listener,
+                                          public juce::ComboBox::Listener,
+                                          public juce::Button::Listener
 {
 public:
     explicit ExtasisDonkerAudioProcessorEditor(ExtasisDonkerAudioProcessor&);
@@ -31,26 +29,18 @@ public:
     void refreshPresetList();
 
 private:
-    
-
-    bool isActivated = false;
-    bool showActivationModal = false;
-    juce::TextButton licenseBadgeButton;
-    ActivationOverlayComponent activationOverlay;
-    SavePresetOverlay savePresetOverlay;
-    bool showSaveModal = false;
-
     ExtasisDonkerAudioProcessor& processorRef;
     ExtasisGUI::TX81ZLookAndFeel customLookAndFeel;
 
-    // Display
+    // Display (lock-free oscilloscope + peak meter + MIDI LED)
     ExtasisGUI::TX81ZDisplay display;
 
-    // Preset selection & Save
+    // Preset selection & native Save Overlay
     juce::ComboBox presetBox;
     juce::TextButton prevPresetBtn { "<" };
     juce::TextButton nextPresetBtn { ">" };
     juce::TextButton savePresetBtn { "SAVE" };
+    SavePresetOverlay savePresetOverlay;
 
     // Audition Trigger Button (Large Logo Pad, Drag for +/-12st)
     ExtasisGUI::DonkTriggerButton triggerBtn;
@@ -58,7 +48,6 @@ private:
     // Soft Clip Toggle Button
     juce::TextButton softClipBtn { "SOFT CLIP" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> softClipAttachment;
-
 
     // Sliders & Labels
     struct KnobControl
